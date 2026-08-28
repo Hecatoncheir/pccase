@@ -3,7 +3,12 @@ import 'package:flutter/material.dart';
 /// Текст, залитый температурной рампой. В вёрстке это
 /// `background-clip: text`, во Flutter — [ShaderMask].
 class GradientText extends StatelessWidget {
-  const GradientText(this.text, {required this.gradient, this.style, super.key});
+  const GradientText(
+    this.text, {
+    required this.gradient,
+    this.style,
+    super.key,
+  });
 
   final String text;
   final Gradient gradient;

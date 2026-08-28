@@ -45,7 +45,7 @@ class Magnetic extends StatefulWidget {
   /// Получает уже сглаженное смещение — так внутренний слой можно увести
   /// дальше корпуса и получить параллакс.
   final Widget Function(BuildContext context, Offset pull, Widget child)?
-      builder;
+  builder;
 
   @override
   State<Magnetic> createState() => _MagneticState();
@@ -138,8 +138,14 @@ class _MagneticState extends State<Magnetic>
   double? distanceTo(Offset pointer) {
     final rect = _rect;
     if (rect == null) return null;
-    final dx = math.max(math.max(rect.left - pointer.dx, 0.0), pointer.dx - rect.right);
-    final dy = math.max(math.max(rect.top - pointer.dy, 0.0), pointer.dy - rect.bottom);
+    final dx = math.max(
+      math.max(rect.left - pointer.dx, 0.0),
+      pointer.dx - rect.right,
+    );
+    final dy = math.max(
+      math.max(rect.top - pointer.dy, 0.0),
+      pointer.dy - rect.bottom,
+    );
     return math.sqrt(dx * dx + dy * dy);
   }
 
@@ -171,8 +177,10 @@ class _MagneticState extends State<Magnetic>
     if (target == _target && !_controller.isAnimating) return;
 
     _target = target;
-    _pull = Tween<Offset>(begin: _pull.value, end: target)
-        .animate(CurvedAnimation(parent: _controller, curve: curve));
+    _pull = Tween<Offset>(
+      begin: _pull.value,
+      end: target,
+    ).animate(CurvedAnimation(parent: _controller, curve: curve));
     _controller
       ..duration = duration
       ..forward(from: 0);

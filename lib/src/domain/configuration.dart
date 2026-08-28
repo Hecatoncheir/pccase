@@ -16,10 +16,10 @@ class CaseConfiguration {
   });
 
   factory CaseConfiguration.fromPreset(Preset preset) => CaseConfiguration(
-        colors: Map.unmodifiable(preset.colors),
-        filaments: Map.unmodifiable(preset.filaments),
-        presetId: preset.id,
-      );
+    colors: Map.unmodifiable(preset.colors),
+    filaments: Map.unmodifiable(preset.filaments),
+    presetId: preset.id,
+  );
 
   final Map<PartId, Color> colors;
   final Map<PartId, FilamentId> filaments;
@@ -31,10 +31,8 @@ class CaseConfiguration {
   FilamentId filamentIdOf(PartId id) => filaments[id]!;
   Filament filamentOf(PartId id) => kFilaments[filaments[id]]!;
 
-  CaseConfiguration withColor(PartId id, Color color) => CaseConfiguration(
-        colors: {...colors, id: color},
-        filaments: filaments,
-      );
+  CaseConfiguration withColor(PartId id, Color color) =>
+      CaseConfiguration(colors: {...colors, id: color}, filaments: filaments);
 
   CaseConfiguration withFilament(PartId id, FilamentId filament) =>
       CaseConfiguration(

@@ -36,10 +36,14 @@ class CasePreview extends ConsumerWidget {
           var ny = 0.0;
           if (box != null && box.hasSize) {
             final center = box.localToGlobal(box.size.center(Offset.zero));
-            nx = ((pointer.dx - center.dx) / (box.size.width * 0.9))
-                .clamp(-1.0, 1.0);
-            ny = ((pointer.dy - center.dy) / (box.size.height * 0.9))
-                .clamp(-1.0, 1.0);
+            nx = ((pointer.dx - center.dx) / (box.size.width * 0.9)).clamp(
+              -1.0,
+              1.0,
+            );
+            ny = ((pointer.dy - center.dy) / (box.size.height * 0.9)).clamp(
+              -1.0,
+              1.0,
+            );
           }
 
           return TweenAnimationBuilder<Offset>(
@@ -61,7 +65,7 @@ class CasePreview extends ConsumerWidget {
                 },
                 accent: c.accent,
                 accentAlt: c.accentAlt,
-                shell: c.plateDeep,
+                glowBlend: c.glowBlend,
               ),
             ),
           );
@@ -81,7 +85,7 @@ class _CasePainter extends CustomPainter {
     required this.colors,
     required this.accent,
     required this.accentAlt,
-    required this.shell,
+    required this.glowBlend,
   });
 
   final double rx;
@@ -89,7 +93,17 @@ class _CasePainter extends CustomPainter {
   final Map<PartId, Color> colors;
   final Color accent;
   final Color accentAlt;
-  final Color shell;
+
+  /// Режим смешивания для свечений: снаружи корпуса он зависит от темы.
+  final BlendMode glowBlend;
+
+  /// Свет складывается только на тёмном грунте.
+  bool get _additive => glowBlend == BlendMode.plus;
+
+  /// Нутро корпуса тёмное в любой теме — это тень внутри коробки,
+  /// а не фон страницы.
+  static const Color shell = Color(0xFF0B0F1A);
+  static const Color shellSide = Color(0xFF141821);
 
   /// Полугабариты корпуса: ширина 210, высота 330, глубина 215.
   static const double w = 105;
@@ -131,36 +145,67 @@ class _CasePainter extends CustomPainter {
     _paintFloorGlow(canvas);
 
     // Грани коробки: дальние рисуем первыми, ближние — поверх.
-    final faces = <(String, List<_P>)>[
-      ('back', [
-        _project(-w, -h, -d), _project(w, -h, -d),
-        _project(w, h, -d), _project(-w, h, -d),
-      ]),
-      ('left', [
-        _project(-w, -h, -d), _project(-w, -h, d),
-        _project(-w, h, d), _project(-w, h, -d),
-      ]),
-      ('bottom', [
-        _project(-w, h, -d), _project(w, h, -d),
-        _project(w, h, d), _project(-w, h, d),
-      ]),
-      ('top', [
-        _project(-w, -h, -d), _project(w, -h, -d),
-        _project(w, -h, d), _project(-w, -h, d),
-      ]),
-      ('right', [
-        _project(w, -h, d), _project(w, -h, -d),
-        _project(w, h, -d), _project(w, h, d),
-      ]),
-      ('front', [
-        _project(-w, -h, d), _project(w, -h, d),
-        _project(w, h, d), _project(-w, h, d),
-      ]),
-    ]..sort((a, b) {
-        final za = a.$2.fold(0.0, (sum, p) => sum + p.z) / a.$2.length;
-        final zb = b.$2.fold(0.0, (sum, p) => sum + p.z) / b.$2.length;
-        return za.compareTo(zb);
-      });
+    final faces =
+        <(String, List<_P>)>[
+          (
+            'back',
+            [
+              _project(-w, -h, -d),
+              _project(w, -h, -d),
+              _project(w, h, -d),
+              _project(-w, h, -d),
+            ],
+          ),
+          (
+            'left',
+            [
+              _project(-w, -h, -d),
+              _project(-w, -h, d),
+              _project(-w, h, d),
+              _project(-w, h, -d),
+            ],
+          ),
+          (
+            'bottom',
+            [
+              _project(-w, h, -d),
+              _project(w, h, -d),
+              _project(w, h, d),
+              _project(-w, h, d),
+            ],
+          ),
+          (
+            'top',
+            [
+              _project(-w, -h, -d),
+              _project(w, -h, -d),
+              _project(w, -h, d),
+              _project(-w, -h, d),
+            ],
+          ),
+          (
+            'right',
+            [
+              _project(w, -h, d),
+              _project(w, -h, -d),
+              _project(w, h, -d),
+              _project(w, h, d),
+            ],
+          ),
+          (
+            'front',
+            [
+              _project(-w, -h, d),
+              _project(w, -h, d),
+              _project(w, h, d),
+              _project(-w, h, d),
+            ],
+          ),
+        ]..sort((a, b) {
+          final za = a.$2.fold(0.0, (sum, p) => sum + p.z) / a.$2.length;
+          final zb = b.$2.fold(0.0, (sum, p) => sum + p.z) / b.$2.length;
+          return za.compareTo(zb);
+        });
 
     var innerDone = false;
     for (final (name, points) in faces) {
@@ -180,7 +225,7 @@ class _CasePainter extends CustomPainter {
         default:
           canvas.drawPath(
             _quad(points),
-            Paint()..color = name == 'left' ? const Color(0xFF141821) : shell,
+            Paint()..color = name == 'left' ? shellSide : shell,
           );
           canvas.drawPath(
             _quad(points),
@@ -196,14 +241,18 @@ class _CasePainter extends CustomPainter {
   }
 
   /// Стол принтера: сетка в перспективе, окрашенная акцентом схемы.
+  /// На светлом грунте линии приходится делать плотнее — там нет свечения,
+  /// которое на тёмном вытягивает сетку само.
   void _paintPlate(Canvas canvas) {
     const half = 320.0;
     const step = 40.0;
+    final base = _additive ? 0.05 : 0.10;
+    final peak = _additive ? 0.16 : 0.34;
     for (var i = -half; i <= half; i += step) {
       final fade = 1 - (i.abs() / half);
       final paint = Paint()
         ..strokeWidth = 1
-        ..color = accent.withValues(alpha: 0.05 + 0.16 * fade * fade);
+        ..color = accent.withValues(alpha: base + peak * fade * fade);
       final a = _project(i, floorY, -half);
       final b = _project(i, floorY, half);
       canvas.drawLine(a.at, b.at, paint);
@@ -221,7 +270,10 @@ class _CasePainter extends CustomPainter {
       radius,
       Paint()
         ..shader = RadialGradient(
-          colors: [accent.withValues(alpha: 0.5), Colors.transparent],
+          colors: [
+            accent.withValues(alpha: _additive ? 0.5 : 0.3),
+            Colors.transparent,
+          ],
           stops: const [0, 0.75],
         ).createShader(Rect.fromCircle(center: center.at, radius: radius))
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 26),
@@ -260,17 +312,18 @@ class _CasePainter extends CustomPainter {
       glow.at,
       150 * glow.scale,
       Paint()
-        ..blendMode = BlendMode.plus
-        ..shader = RadialGradient(
-          colors: [
-            accent.withValues(alpha: 0.45),
-            accentAlt.withValues(alpha: 0.18),
-            Colors.transparent,
-          ],
-          stops: const [0, 0.45, 1],
-        ).createShader(
-          Rect.fromCircle(center: glow.at, radius: 150 * glow.scale),
-        )
+        ..blendMode = glowBlend
+        ..shader =
+            RadialGradient(
+              colors: [
+                accent.withValues(alpha: 0.45),
+                accentAlt.withValues(alpha: 0.18),
+                Colors.transparent,
+              ],
+              stops: const [0, 0.45, 1],
+            ).createShader(
+              Rect.fromCircle(center: glow.at, radius: 150 * glow.scale),
+            )
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 24),
     );
   }
@@ -288,16 +341,18 @@ class _CasePainter extends CustomPainter {
       glow.at,
       130 * glow.scale,
       Paint()
-        ..blendMode = BlendMode.plus
-        ..shader = RadialGradient(
-          colors: [accent.withValues(alpha: 0.22), Colors.transparent],
-          stops: const [0, 1],
-        ).createShader(
-          Rect.fromCircle(center: glow.at, radius: 130 * glow.scale),
-        ),
+        ..blendMode = glowBlend
+        ..shader =
+            RadialGradient(
+              colors: [accent.withValues(alpha: 0.22), Colors.transparent],
+              stops: const [0, 1],
+            ).createShader(
+              Rect.fromCircle(center: glow.at, radius: 130 * glow.scale),
+            ),
     );
 
-    final hole = Paint()..color = const Color(0xFF04060B).withValues(alpha: 0.7);
+    final hole = Paint()
+      ..color = const Color(0xFF04060B).withValues(alpha: 0.7);
     for (var v = -h + 12; v < h - 10; v += 14) {
       for (var u = -w + 12; u < w - 10; u += 14) {
         final p = _project(u, v, d);
@@ -417,5 +472,6 @@ class _CasePainter extends CustomPainter {
       old.ry != ry ||
       old.accent != accent ||
       old.accentAlt != accentAlt ||
+      old.glowBlend != glowBlend ||
       !mapEquals(old.colors, colors);
 }

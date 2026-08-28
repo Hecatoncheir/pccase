@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'state/config_controller.dart';
+import 'state/theme_controller.dart';
 import 'theme/mod_theme.dart';
 import 'ui/home_page.dart';
 import 'ui/widgets/pointer_field.dart';
@@ -18,10 +19,10 @@ class ModCaseApp extends ConsumerWidget {
     return MaterialApp(
       title: 'MODCASE Hyper',
       debugShowCheckedModeBanner: false,
-      theme: buildModTheme(preset),
-      home: const Scaffold(
-        body: PointerField(child: HomePage()),
-      ),
+      themeMode: ref.watch(themeModeProvider),
+      theme: buildModTheme(preset, Brightness.light),
+      darkTheme: buildModTheme(preset, Brightness.dark),
+      home: const Scaffold(body: PointerField(child: HomePage())),
     );
   }
 }

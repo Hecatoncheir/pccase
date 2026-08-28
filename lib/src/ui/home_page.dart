@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/config_controller.dart';
+import '../state/theme_controller.dart';
 import '../theme/mod_colors.dart';
 import 'format.dart';
 import 'widgets/case_preview.dart';
@@ -157,12 +158,56 @@ class _NavBar extends StatelessWidget {
                   ),
                 ),
             ],
+            const _ThemeToggle(),
+            const SizedBox(width: 12),
             ModButton(
               label: 'Собрать корпус',
               compact: true,
               onPressed: () => onTap('Конструктор'),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Переключатель светлой и тёмной темы. Считаем от того, что человек
+/// видит сейчас, — из режима «как в системе» иначе не выйти одним нажатием.
+class _ThemeToggle extends ConsumerWidget {
+  const _ThemeToggle();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.mod;
+    final dark = c.isDark;
+
+    return HotZone(
+      child: Tooltip(
+        message: dark ? 'Светлая тема' : 'Тёмная тема',
+        child: Material(
+          color: Colors.transparent,
+          shape: const CircleBorder(),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            mouseCursor: MouseCursor.defer,
+            onTap: () => ref
+                .read(themeModeProvider.notifier)
+                .toggle(Theme.of(context).brightness),
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: c.line),
+              ),
+              child: Icon(
+                dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                size: 16,
+                color: c.inkSoft,
+              ),
+            ),
+          ),
         ),
       ),
     );

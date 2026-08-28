@@ -43,7 +43,7 @@ class ModButton extends StatelessWidget {
         child: Text(
           label.toUpperCase(),
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: solid ? const Color(0xFF0A0A0C) : c.ink,
+            color: solid ? Theme.of(context).colorScheme.onPrimary : c.ink,
             fontSize: compact ? 11.5 : 12.5,
           ),
         ),

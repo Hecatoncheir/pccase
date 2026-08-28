@@ -302,7 +302,9 @@ class _Chip extends StatelessWidget {
             child: Text(
               label,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: selected ? const Color(0xFF08090C) : c.inkSoft,
+                color: selected
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : c.inkSoft,
                 fontSize: 11.5,
               ),
             ),

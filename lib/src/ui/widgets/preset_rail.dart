@@ -107,7 +107,7 @@ class _PresetCard extends StatelessWidget {
                         child: Text(
                           'АКТИВЕН',
                           style: text.labelSmall?.copyWith(
-                            color: const Color(0xFF08090C),
+                            color: Theme.of(context).colorScheme.onPrimary,
                             fontSize: 9,
                           ),
                         ),

@@ -37,7 +37,8 @@ const kFilaments = <FilamentId, Filament>{
     tempLabel: '195–225°C',
     pricePerGram: 2.4,
     hoursPerGram: 0.105,
-    note: 'Базовый пластик: максимум цветов и идеальная геометрия. '
+    note:
+        'Базовый пластик: максимум цветов и идеальная геометрия. '
         'Не любит прямое солнце и жару в закрытой машине.',
     meters: [
       FilamentMeter('жёсткость', 62),
@@ -52,7 +53,8 @@ const kFilaments = <FilamentId, Filament>{
     tempLabel: '230–250°C',
     pricePerGram: 3.2,
     hoursPerGram: 0.118,
-    note: 'Вязкий и живучий: держит удар и нагрев, прощает перетянутый винт. '
+    note:
+        'Вязкий и живучий: держит удар и нагрев, прощает перетянутый винт. '
         'Мелкая деталь чуть мягче, чем у PLA.',
     meters: [
       FilamentMeter('жёсткость', 70),
@@ -67,7 +69,8 @@ const kFilaments = <FilamentId, Filament>{
     tempLabel: '250–270°C',
     pricePerGram: 4.4,
     hoursPerGram: 0.126,
-    note: 'Для солнца и жары: не желтеет и не ведёт со временем. '
+    note:
+        'Для солнца и жары: не желтеет и не ведёт со временем. '
         'Печатается в закрытой камере — отсюда цена и срок.',
     meters: [
       FilamentMeter('жёсткость', 76),
@@ -82,7 +85,8 @@ const kFilaments = <FilamentId, Filament>{
     tempLabel: '205–230°C',
     pricePerGram: 3.6,
     hoursPerGram: 0.112,
-    note: 'Глянец под металл: панель читается как крашеный алюминий. '
+    note:
+        'Глянец под металл: панель читается как крашеный алюминий. '
         'Царапается легче матовых пластиков.',
     meters: [
       FilamentMeter('жёсткость', 58),
@@ -97,7 +101,8 @@ const kFilaments = <FilamentId, Filament>{
     tempLabel: '220–240°C',
     pricePerGram: 7.1,
     hoursPerGram: 0.132,
-    note: 'Матовый угольный: самый жёсткий в наборе, полностью прячет слои. '
+    note:
+        'Матовый угольный: самый жёсткий в наборе, полностью прячет слои. '
         'Идеален для сетки и несущих панелей.',
     meters: [
       FilamentMeter('жёсткость', 100),

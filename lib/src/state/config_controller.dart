@@ -22,8 +22,9 @@ class PresetController extends Notifier<Preset> {
 }
 
 /// Конфигурация набора.
-final configProvider =
-    NotifierProvider<ConfigController, CaseConfiguration>(ConfigController.new);
+final configProvider = NotifierProvider<ConfigController, CaseConfiguration>(
+  ConfigController.new,
+);
 
 class ConfigController extends Notifier<CaseConfiguration> {
   @override
@@ -52,4 +53,6 @@ class SelectedPart extends Notifier<PartId> {
 }
 
 /// Смета пересчитывается сама при любом изменении конфигурации.
-final quoteProvider = Provider<Quote>((ref) => quoteFor(ref.watch(configProvider)));
+final quoteProvider = Provider<Quote>(
+  (ref) => quoteFor(ref.watch(configProvider)),
+);

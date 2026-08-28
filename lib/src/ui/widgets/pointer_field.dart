@@ -26,7 +26,8 @@ class PointerScope extends InheritedWidget {
     return scope!;
   }
 
-  static ValueListenable<Offset> of(BuildContext context) => _of(context).pointer;
+  static ValueListenable<Offset> of(BuildContext context) =>
+      _of(context).pointer;
 
   static ValueNotifier<bool> hotOf(BuildContext context) => _of(context).hot;
 
@@ -116,6 +117,8 @@ class _PointerFieldState extends State<PointerField>
             [c.cold, c.mid, c.hot, c.silk],
             accent: c.accent,
             silk: c.silk,
+            molten: c.molten,
+            blend: c.glowBlend,
           );
           return Stack(
             children: [
@@ -132,7 +135,7 @@ class _PointerFieldState extends State<PointerField>
                         ),
                         radius: 0.42,
                         colors: [
-                          c.accent.withValues(alpha: 0.16),
+                          c.accent.withValues(alpha: c.glowStrength),
                           Colors.transparent,
                         ],
                       ),
@@ -140,11 +143,7 @@ class _PointerFieldState extends State<PointerField>
                   ),
                 ),
               ),
-              PointerScope(
-                pointer: _pointer,
-                hot: _hot,
-                child: widget.child,
-              ),
+              PointerScope(pointer: _pointer, hot: _hot, child: widget.child),
               // Сопло и след рисуем поверх всего, но события пропускаем сквозь.
               Positioned.fill(
                 child: IgnorePointer(
@@ -192,6 +191,8 @@ class _Field extends ChangeNotifier {
   List<Color> colors = const [];
   Color accent = const Color(0xFFFF4A1C);
   Color silk = const Color(0xFF16F2AE);
+  Color molten = const Color(0xFFFFD9A8);
+  BlendMode blend = BlendMode.plus;
   Size size = Size.zero;
 
   Offset pointer = Offset.zero;
@@ -206,25 +207,33 @@ class _Field extends ChangeNotifier {
     List<Color> palette, {
     required Color accent,
     required Color silk,
+    required Color molten,
+    required BlendMode blend,
   }) {
     colors = palette;
     this.accent = accent;
     this.silk = silk;
+    this.molten = molten;
+    this.blend = blend;
     if (value == size || value.isEmpty) return;
     size = value;
     final count = (value.width * value.height / 13000).round().clamp(40, 150);
     particles
       ..clear()
-      ..addAll(List.generate(count, (i) {
-        return _Particle(
-          Offset(_random.nextDouble() * value.width,
-              _random.nextDouble() * value.height),
-          _random.nextDouble() * 0.32 + 0.07,
-          _random.nextDouble() * 1.9 + 0.5,
-          _random.nextDouble() * 0.5 + 0.2,
-          _random.nextDouble() * math.pi * 2,
-        )..colorIndex = i % 4;
-      }));
+      ..addAll(
+        List.generate(count, (i) {
+          return _Particle(
+            Offset(
+              _random.nextDouble() * value.width,
+              _random.nextDouble() * value.height,
+            ),
+            _random.nextDouble() * 0.32 + 0.07,
+            _random.nextDouble() * 1.9 + 0.5,
+            _random.nextDouble() * 0.5 + 0.2,
+            _random.nextDouble() * math.pi * 2,
+          )..colorIndex = i % 4;
+        }),
+      );
   }
 
   void step(double dt, Offset next, bool isHot) {
@@ -282,14 +291,19 @@ class _Field extends ChangeNotifier {
     final speed = math.min(moved.distance, 40.0);
     final count = speed > 6 ? 2 : 1;
     for (var i = 0; i < count; i++) {
-      sparks.add(_Spark(
-        at.translate((_random.nextDouble() - .5) * 6, (_random.nextDouble() - .5) * 6),
-        Offset(
-          -moved.dx * 0.035 + (_random.nextDouble() - .5) * .5,
-          -moved.dy * 0.035 + (_random.nextDouble() - .5) * .5 - .25,
+      sparks.add(
+        _Spark(
+          at.translate(
+            (_random.nextDouble() - .5) * 6,
+            (_random.nextDouble() - .5) * 6,
+          ),
+          Offset(
+            -moved.dx * 0.035 + (_random.nextDouble() - .5) * .5,
+            -moved.dy * 0.035 + (_random.nextDouble() - .5) * .5 - .25,
+          ),
+          _random.nextDouble() * 2.4 + 1.2,
         ),
-        _random.nextDouble() * 2.4 + 1.2,
-      ));
+      );
     }
     if (sparks.length > 220) sparks.removeRange(0, sparks.length - 220);
   }
@@ -300,15 +314,17 @@ class _FieldPainter extends CustomPainter {
 
   final _Field field;
 
-  static const _molten = Color(0xFFFFD9A8);
-
   @override
   void paint(Canvas canvas, Size size) {
     if (field.colors.isEmpty) return;
 
-    final dot = Paint()..blendMode = BlendMode.plus;
+    // На светлом грунте свет не складывается — рисуем обычным наложением
+    // и плотнее, иначе частицы просто исчезают.
+    final additive = field.blend == BlendMode.plus;
+    final density = additive ? 0.55 : 0.75;
+    final dot = Paint()..blendMode = field.blend;
     final link = Paint()
-      ..blendMode = BlendMode.plus
+      ..blendMode = field.blend
       ..strokeWidth = 0.6
       ..style = PaintingStyle.stroke;
 
@@ -318,7 +334,7 @@ class _FieldPainter extends CustomPainter {
       canvas.drawCircle(
         at,
         p.radius,
-        dot..color = color.withValues(alpha: p.alpha * 0.55),
+        dot..color = color.withValues(alpha: p.alpha * density),
       );
 
       // Связи только вокруг указателя — «магнитное поле» сопла.
@@ -327,7 +343,10 @@ class _FieldPainter extends CustomPainter {
         canvas.drawLine(
           at,
           field.pointer,
-          link..color = color.withValues(alpha: (1 - distance / 160) * 0.3),
+          link
+            ..color = color.withValues(
+              alpha: (1 - distance / 160) * (additive ? 0.3 : 0.22),
+            ),
         );
       }
     }
@@ -338,8 +357,11 @@ class _FieldPainter extends CustomPainter {
         spark.position,
         spark.radius * spark.life,
         dot
-          ..color = Color.lerp(_molten, field.accent, 1 - spark.life)!
-              .withValues(alpha: spark.life * 0.8),
+          ..color = Color.lerp(
+            field.molten,
+            field.accent,
+            1 - spark.life,
+          )!.withValues(alpha: spark.life * 0.8),
       );
     }
 
@@ -349,6 +371,7 @@ class _FieldPainter extends CustomPainter {
 
   /// Сопло: кольцо с пунктирной обоймой и горячее ядро.
   void _paintNozzle(Canvas canvas) {
+    final additive = field.blend == BlendMode.plus;
     final radius = field.hot ? 29.0 : 17.0;
     final tint = field.hot ? field.silk : field.accent;
 
@@ -358,15 +381,15 @@ class _FieldPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5
-        ..blendMode = BlendMode.plus
-        ..color = Color.lerp(tint, Colors.white, 0.2)!,
+        ..blendMode = field.blend
+        ..color = additive ? Color.lerp(tint, Colors.white, 0.2)! : tint,
     );
 
     final dashes = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1
-      ..blendMode = BlendMode.plus
-      ..color = tint.withValues(alpha: 0.4);
+      ..blendMode = field.blend
+      ..color = tint.withValues(alpha: additive ? 0.4 : 0.55);
     final ring = Rect.fromCircle(center: field.ring, radius: radius + 9);
     for (var i = 0; i < 12; i++) {
       final start = field.spin + i * math.pi / 6;
@@ -377,16 +400,16 @@ class _FieldPainter extends CustomPainter {
       field.core,
       3,
       Paint()
-        ..blendMode = BlendMode.plus
-        ..color = _molten
+        ..blendMode = field.blend
+        ..color = field.molten
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
     );
     canvas.drawCircle(
       field.core,
       2.5,
       Paint()
-        ..blendMode = BlendMode.plus
-        ..color = const Color(0xFFFFE9CF),
+        ..blendMode = field.blend
+        ..color = additive ? const Color(0xFFFFE9CF) : field.molten,
     );
   }
 
