@@ -11,7 +11,9 @@ import 'widgets/gradient_text.dart';
 import 'widgets/mod_button.dart';
 import 'widgets/pointer_field.dart';
 import 'widgets/preset_rail.dart';
-import 'widgets/sections.dart';
+import 'widgets/kit_grid.dart';
+import 'widgets/materials_grid.dart';
+import 'widgets/process_steps.dart';
 
 const double _maxWidth = 1280;
 const double _wideBreakpoint = 1040;
@@ -146,13 +148,25 @@ class _NavBar extends StatelessWidget {
             if (wide) ...[
               for (final label in sections)
                 Padding(
-                  padding: const EdgeInsets.only(right: 24),
+                  padding: const EdgeInsets.only(right: 12),
                   child: HotZone(
-                    child: GestureDetector(
-                      onTap: () => onTap(label),
-                      child: Text(
-                        label,
-                        style: text.bodyMedium?.copyWith(fontSize: 14),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      child: InkWell(
+                        onTap: () => onTap(label),
+                        borderRadius: BorderRadius.circular(8),
+                        mouseCursor: MouseCursor.defer,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
+                          child: Text(
+                            label,
+                            style: text.bodyMedium?.copyWith(fontSize: 14),
+                          ),
+                        ),
                       ),
                     ),
                   ),

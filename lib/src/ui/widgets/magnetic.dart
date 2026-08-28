@@ -149,10 +149,20 @@ class _MagneticState extends State<Magnetic>
     return math.sqrt(dx * dx + dy * dy);
   }
 
+  Rect? _rectCache;
+  int _rectAt = 0;
+
+  /// `localToGlobal` идёт по всей цепочке трансформаций вверх, а кнопок
+  /// на странице восемь и указатель дёргается чаще кадра — хватает
+  /// одного пересчёта на кадр.
   Rect? get _rect {
+    final now = DateTime.now().microsecondsSinceEpoch;
+    if (_rectCache != null && now - _rectAt < 16000) return _rectCache;
+
     final box = context.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize || !box.attached) return null;
-    return box.localToGlobal(Offset.zero) & box.size;
+    _rectAt = now;
+    return _rectCache = box.localToGlobal(Offset.zero) & box.size;
   }
 
   void engage({required bool engaged, required Offset pointer}) {

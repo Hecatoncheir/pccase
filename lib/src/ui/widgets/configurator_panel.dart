@@ -332,35 +332,50 @@ class _Swatch extends StatelessWidget {
     return Tooltip(
       message: swatch.name,
       child: HotZone(
-        child: GestureDetector(
-          onTap: onTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: swatch.color,
+        // Кнопка, а не GestureDetector: нужен фокус с клавиатуры,
+        // роль и состояние «выбрано» для скринридера.
+        child: Semantics(
+          button: true,
+          selected: selected,
+          label: 'Цвет ${swatch.name}',
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(9),
+            child: InkWell(
+              onTap: onTap,
               borderRadius: BorderRadius.circular(9),
-              gradient: swatch.silk
-                  ? LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color.alphaBlend(
-                          Colors.white.withValues(alpha: 0.45),
-                          swatch.color,
-                        ),
-                        swatch.color,
-                        Color.alphaBlend(
-                          Colors.white.withValues(alpha: 0.28),
-                          swatch.color,
-                        ),
-                      ],
-                    )
-                  : null,
-              border: Border.all(
-                color: selected ? c.ink : Colors.white.withValues(alpha: 0.16),
-                width: selected ? 2 : 1,
+              mouseCursor: MouseCursor.defer,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: swatch.color,
+                  borderRadius: BorderRadius.circular(9),
+                  gradient: swatch.silk
+                      ? LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color.alphaBlend(
+                              Colors.white.withValues(alpha: 0.45),
+                              swatch.color,
+                            ),
+                            swatch.color,
+                            Color.alphaBlend(
+                              Colors.white.withValues(alpha: 0.28),
+                              swatch.color,
+                            ),
+                          ],
+                        )
+                      : null,
+                  border: Border.all(
+                    color: selected
+                        ? c.ink
+                        : Colors.white.withValues(alpha: 0.16),
+                    width: selected ? 2 : 1,
+                  ),
+                ),
               ),
             ),
           ),

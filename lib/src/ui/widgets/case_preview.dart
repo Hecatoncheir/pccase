@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show PointMode;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -16,43 +17,80 @@ import 'pointer_field.dart';
 ///
 /// Под продакшен эту сцену заменит Spline или GLB; контракт останется тем же:
 /// цвета деталей внутрь, наклон снаружи.
-class CasePreview extends ConsumerWidget {
+class CasePreview extends ConsumerStatefulWidget {
   const CasePreview({this.height = 520, super.key});
 
   final double height;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CasePreview> createState() => _CasePreviewState();
+}
+
+class _CasePreviewState extends ConsumerState<CasePreview> {
+  static const _rest = Offset(-12 * math.pi / 180, -28 * math.pi / 180);
+
+  ValueListenable<Offset>? _pointer;
+  Offset _rotation = _rest;
+  double _viewHeight = 0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final pointer = PointerScope.of(context);
+    if (!identical(pointer, _pointer)) {
+      _pointer?.removeListener(_onPointer);
+      _pointer = pointer..addListener(_onPointer);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pointer?.removeListener(_onPointer);
+    super.dispose();
+  }
+
+  /// Наклон пересчитываем, только когда корпус на экране: страница — один
+  /// длинный скролл, и без этой проверки геройский корпус продолжал бы
+  /// считать проекции, пока листают конструктор.
+  void _onPointer() {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+
+    final top = box.localToGlobal(Offset.zero).dy;
+    if (top > _viewHeight + 120 || top + box.size.height < -120) return;
+
+    final center = box.localToGlobal(box.size.center(Offset.zero));
+    final pointer = _pointer!.value;
+    final nx = ((pointer.dx - center.dx) / (box.size.width * 0.9)).clamp(
+      -1.0,
+      1.0,
+    );
+    final ny = ((pointer.dy - center.dy) / (box.size.height * 0.9)).clamp(
+      -1.0,
+      1.0,
+    );
+    final next = Offset(
+      (-12 - ny * 13) * math.pi / 180,
+      (-28 + nx * 26) * math.pi / 180,
+    );
+    // Меньше десятой доли градуса глазом не видно — не будим кадр зря.
+    if ((next - _rotation).distance < 0.0015) return;
+    setState(() => _rotation = next);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final config = ref.watch(configProvider);
     final c = context.mod;
+    _viewHeight = MediaQuery.sizeOf(context).height;
 
     return SizedBox(
-      height: height,
-      child: ValueListenableBuilder<Offset>(
-        valueListenable: PointerScope.of(context),
-        builder: (context, pointer, _) {
-          final box = context.findRenderObject() as RenderBox?;
-          var nx = 0.0;
-          var ny = 0.0;
-          if (box != null && box.hasSize) {
-            final center = box.localToGlobal(box.size.center(Offset.zero));
-            nx = ((pointer.dx - center.dx) / (box.size.width * 0.9)).clamp(
-              -1.0,
-              1.0,
-            );
-            ny = ((pointer.dy - center.dy) / (box.size.height * 0.9)).clamp(
-              -1.0,
-              1.0,
-            );
-          }
-
-          return TweenAnimationBuilder<Offset>(
-            tween: Tween<Offset>(
-              end: Offset(
-                (-12 - ny * 13) * math.pi / 180,
-                (-28 + nx * 26) * math.pi / 180,
-              ),
-            ),
+      height: widget.height,
+      child: Semantics(
+        label: 'Объёмная модель корпуса в выбранной схеме покраски',
+        child: RepaintBoundary(
+          child: TweenAnimationBuilder<Offset>(
+            tween: Tween<Offset>(end: _rotation),
             duration: const Duration(milliseconds: 240),
             curve: Curves.easeOutCubic,
             builder: (context, rotation, _) => CustomPaint(
@@ -68,8 +106,8 @@ class CasePreview extends ConsumerWidget {
                 glowBlend: c.glowBlend,
               ),
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
@@ -115,14 +153,18 @@ class _CasePainter extends CustomPainter {
   late Offset _origin;
   late double _fit;
 
-  _P _project(double x, double y, double z) {
-    final cx = math.cos(rx), sx = math.sin(rx);
-    final cy = math.cos(ry), sy = math.sin(ry);
+  // Углы на кадр одни и те же — считать синусы на каждую из полутысячи
+  // точек было чистой потерей.
+  late double _cosX;
+  late double _sinX;
+  late double _cosY;
+  late double _sinY;
 
-    final x1 = x * cy + z * sy;
-    final z1 = -x * sy + z * cy;
-    final y2 = y * cx - z1 * sx;
-    final z2 = y * sx + z1 * cx;
+  _P _project(double x, double y, double z) {
+    final x1 = x * _cosY + z * _sinY;
+    final z1 = -x * _sinY + z * _cosY;
+    final y2 = y * _cosX - z1 * _sinX;
+    final z2 = y * _sinX + z1 * _cosX;
 
     final s = focal / (focal - z2) * _fit;
     return (at: Offset(x1 * s, y2 * s) + _origin, z: z2, scale: s);
@@ -138,6 +180,10 @@ class _CasePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    _cosX = math.cos(rx);
+    _sinX = math.sin(rx);
+    _cosY = math.cos(ry);
+    _sinY = math.sin(ry);
     _fit = math.min(size.width / 460, size.height / 560).clamp(0.35, 1.15);
     _origin = Offset(size.width / 2, size.height / 2 - 20 * _fit);
 
@@ -351,14 +397,23 @@ class _CasePainter extends CustomPainter {
             ),
     );
 
-    final hole = Paint()
-      ..color = const Color(0xFF04060B).withValues(alpha: 0.7);
+    // Триста отверстий — это один вызов drawPoints, а не триста drawCircle.
+    // Перспективный масштаб по панели гуляет на 12.5%, на радиусе 2.7 px
+    // это треть пикселя, поэтому берём масштаб центра на все точки.
+    final holes = <Offset>[];
     for (var v = -h + 12; v < h - 10; v += 14) {
       for (var u = -w + 12; u < w - 10; u += 14) {
-        final p = _project(u, v, d);
-        canvas.drawCircle(p.at, 2.7 * p.scale, hole);
+        holes.add(_project(u, v, d).at);
       }
     }
+    canvas.drawPoints(
+      PointMode.points,
+      holes,
+      Paint()
+        ..color = const Color(0xFF04060B).withValues(alpha: 0.7)
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 5.4 * _project(0, 0, d).scale,
+    );
     canvas.restore();
 
     // Шильд.

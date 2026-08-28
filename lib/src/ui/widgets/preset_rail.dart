@@ -7,7 +7,7 @@ import '../../domain/preset.dart';
 import '../../state/config_controller.dart';
 import '../../theme/mod_colors.dart';
 import '../format.dart';
-import 'sections.dart';
+import 'tilt_card.dart';
 
 /// Готовые схемы покраски. Выбор пресета меняет и конфигурацию,
 /// и акцент всей темы — переход анимирует `AnimatedTheme`.

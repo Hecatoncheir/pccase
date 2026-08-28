@@ -119,37 +119,32 @@ class _PointerFieldState extends State<PointerField>
             silk: c.silk,
             molten: c.molten,
             blend: c.glowBlend,
+            glow: c.glowStrength,
           );
           return Stack(
             children: [
               Positioned.fill(child: ColoredBox(color: c.plate)),
+              // Свечение и частицы — под контентом, след и сопло — над ним.
+              // Оба слоя за RepaintBoundary, иначе каждый кадр пачкает
+              // всё дерево страницы.
               Positioned.fill(
-                child: ValueListenableBuilder<Offset>(
-                  valueListenable: _pointer,
-                  builder: (context, position, _) => DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        center: Alignment(
-                          (position.dx / constraints.maxWidth) * 2 - 1,
-                          (position.dy / constraints.maxHeight) * 2 - 1,
-                        ),
-                        radius: 0.42,
-                        colors: [
-                          c.accent.withValues(alpha: c.glowStrength),
-                          Colors.transparent,
-                        ],
-                      ),
+                child: RepaintBoundary(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: _FieldPainter(_field, _Layer.behind),
+                      isComplex: true,
                     ),
                   ),
                 ),
               ),
               PointerScope(pointer: _pointer, hot: _hot, child: widget.child),
-              // Сопло и след рисуем поверх всего, но события пропускаем сквозь.
               Positioned.fill(
-                child: IgnorePointer(
-                  child: CustomPaint(
-                    painter: _FieldPainter(_field),
-                    isComplex: true,
+                child: RepaintBoundary(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: _FieldPainter(_field, _Layer.above),
+                      isComplex: true,
+                    ),
                   ),
                 ),
               ),
@@ -193,6 +188,7 @@ class _Field extends ChangeNotifier {
   Color silk = const Color(0xFF16F2AE);
   Color molten = const Color(0xFFFFD9A8);
   BlendMode blend = BlendMode.plus;
+  double glow = 0.16;
   Size size = Size.zero;
 
   Offset pointer = Offset.zero;
@@ -209,12 +205,14 @@ class _Field extends ChangeNotifier {
     required Color silk,
     required Color molten,
     required BlendMode blend,
+    required double glow,
   }) {
     colors = palette;
     this.accent = accent;
     this.silk = silk;
     this.molten = molten;
     this.blend = blend;
+    this.glow = glow;
     if (value == size || value.isEmpty) return;
     size = value;
     final count = (value.width * value.height / 13000).round().clamp(40, 150);
@@ -309,15 +307,47 @@ class _Field extends ChangeNotifier {
   }
 }
 
+/// Что рисуем: фон под контентом или курсор поверх него.
+enum _Layer { behind, above }
+
 class _FieldPainter extends CustomPainter {
-  _FieldPainter(this.field) : super(repaint: field);
+  _FieldPainter(this.field, this.layer) : super(repaint: field);
 
   final _Field field;
+  final _Layer layer;
 
   @override
   void paint(Canvas canvas, Size size) {
     if (field.colors.isEmpty) return;
+    if (layer == _Layer.above) {
+      _paintTrail(canvas);
+      if (field.awake) _paintNozzle(canvas);
+      return;
+    }
+    _paintGlow(canvas, size);
+    _paintParticles(canvas);
+  }
 
+  /// Пятно под курсором. Раньше это был полноэкранный DecoratedBox,
+  /// который пересобирался на каждое движение мыши.
+  void _paintGlow(Canvas canvas, Size size) {
+    if (!field.awake) return;
+    final radius = math.min(size.width, size.height) * 0.42;
+    canvas.drawCircle(
+      field.pointer,
+      radius,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            field.accent.withValues(alpha: field.glow),
+            Colors.transparent,
+          ],
+          stops: const [0, 0.68],
+        ).createShader(Rect.fromCircle(center: field.pointer, radius: radius)),
+    );
+  }
+
+  void _paintParticles(Canvas canvas) {
     // На светлом грунте свет не складывается — рисуем обычным наложением
     // и плотнее, иначе частицы просто исчезают.
     final additive = field.blend == BlendMode.plus;
@@ -350,8 +380,11 @@ class _FieldPainter extends CustomPainter {
         );
       }
     }
+  }
 
-    // Экструзионный след: из расплава в акцент схемы.
+  /// Экструзионный след: из расплава в акцент схемы.
+  void _paintTrail(Canvas canvas) {
+    final dot = Paint()..blendMode = field.blend;
     for (final spark in field.sparks) {
       canvas.drawCircle(
         spark.position,
@@ -364,9 +397,6 @@ class _FieldPainter extends CustomPainter {
           )!.withValues(alpha: spark.life * 0.8),
       );
     }
-
-    if (!field.awake) return;
-    _paintNozzle(canvas);
   }
 
   /// Сопло: кольцо с пунктирной обоймой и горячее ядро.
