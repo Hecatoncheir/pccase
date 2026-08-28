@@ -8,6 +8,7 @@ import '../../state/config_controller.dart';
 import '../../theme/mod_colors.dart';
 import '../format.dart';
 import 'mod_button.dart';
+import 'pointer_field.dart';
 
 /// Правая колонка конструктора: деталь → материал → цвет → смета.
 class ConfiguratorPanel extends ConsumerWidget {
@@ -72,7 +73,8 @@ class ConfiguratorPanel extends ConsumerWidget {
         const SizedBox(height: 14),
         _Panel(
           title: 'Цвет детали · ${colorName(color)}',
-          trailing: '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}',
+          trailing:
+              '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}',
           child: Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -135,7 +137,11 @@ class ConfiguratorPanel extends ConsumerWidget {
 }
 
 class _Panel extends StatelessWidget {
-  const _Panel({required this.title, required this.trailing, required this.child});
+  const _Panel({
+    required this.title,
+    required this.trailing,
+    required this.child,
+  });
 
   final String title;
   final String trailing;
@@ -193,64 +199,69 @@ class _PartRow extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-            decoration: BoxDecoration(
-              color: selected
-                  ? Color.alphaBlend(
-                      c.accent.withValues(alpha: 0.12), c.panelRaised)
-                  : c.panelRaised.withValues(alpha: 0.55),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: selected ? c.accent : Colors.transparent,
+      child: HotZone(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(10),
+            mouseCursor: MouseCursor.defer,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+              decoration: BoxDecoration(
+                color: selected
+                    ? Color.alphaBlend(
+                        c.accent.withValues(alpha: 0.12),
+                        c.panelRaised,
+                      )
+                    : c.panelRaised.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: selected ? c.accent : Colors.transparent,
+                ),
               ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 22,
-                  height: 22,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
+              child: Row(
+                children: [
+                  Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        part.name,
-                        style: text.bodyMedium?.copyWith(
-                          color: c.ink,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14.5,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          part.name,
+                          style: text.bodyMedium?.copyWith(
+                            color: c.ink,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14.5,
+                          ),
                         ),
-                      ),
-                      Text(
-                        '${filament.label} · ${colorName(color)} · ${grams(part.grams)}'
-                            .toUpperCase(),
-                        style: text.labelSmall,
-                      ),
-                    ],
+                        Text(
+                          '${filament.label} · ${colorName(color)} · ${grams(part.grams)}'
+                              .toUpperCase(),
+                          style: text.labelSmall,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  rub(part.grams * filament.pricePerGram),
-                  style: text.labelLarge?.copyWith(color: c.inkSoft),
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  Text(
+                    rub(part.grams * filament.pricePerGram),
+                    style: text.labelLarge?.copyWith(color: c.inkSoft),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -260,7 +271,11 @@ class _PartRow extends StatelessWidget {
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.selected, required this.onTap});
+  const _Chip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   final String label;
   final bool selected;
@@ -269,25 +284,28 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.mod;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
-          decoration: BoxDecoration(
-            color: selected ? c.accent : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: selected ? c.accent : c.line),
-          ),
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: selected ? const Color(0xFF08090C) : c.inkSoft,
-                  fontSize: 11.5,
-                ),
+    return HotZone(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          mouseCursor: MouseCursor.defer,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+            decoration: BoxDecoration(
+              color: selected ? c.accent : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: selected ? c.accent : c.line),
+            ),
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: selected ? const Color(0xFF08090C) : c.inkSoft,
+                fontSize: 11.5,
+              ),
+            ),
           ),
         ),
       ),
@@ -311,35 +329,37 @@ class _Swatch extends StatelessWidget {
     final c = context.mod;
     return Tooltip(
       message: swatch.name,
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: swatch.color,
-            borderRadius: BorderRadius.circular(9),
-            gradient: swatch.silk
-                ? LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color.alphaBlend(
-                        Colors.white.withValues(alpha: 0.45),
+      child: HotZone(
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: swatch.color,
+              borderRadius: BorderRadius.circular(9),
+              gradient: swatch.silk
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color.alphaBlend(
+                          Colors.white.withValues(alpha: 0.45),
+                          swatch.color,
+                        ),
                         swatch.color,
-                      ),
-                      swatch.color,
-                      Color.alphaBlend(
-                        Colors.white.withValues(alpha: 0.28),
-                        swatch.color,
-                      ),
-                    ],
-                  )
-                : null,
-            border: Border.all(
-              color: selected ? c.ink : Colors.white.withValues(alpha: 0.16),
-              width: selected ? 2 : 1,
+                        Color.alphaBlend(
+                          Colors.white.withValues(alpha: 0.28),
+                          swatch.color,
+                        ),
+                      ],
+                    )
+                  : null,
+              border: Border.all(
+                color: selected ? c.ink : Colors.white.withValues(alpha: 0.16),
+                width: selected ? 2 : 1,
+              ),
             ),
           ),
         ),

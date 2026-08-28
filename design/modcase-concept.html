@@ -1,7 +1,7 @@
 <title>MODCASE Hyper</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Manrope:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&family=Nunito+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
 /* ============================================================
    MODCASE HYPER — концепт визуального языка
@@ -67,7 +67,7 @@ body{
   margin:0;
   background: var(--plate);
   color: var(--ink);
-  font-family: "Manrope", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  font-family: "Nunito Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
   font-size: 16px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -100,10 +100,10 @@ body::after{
 
 /* ---------- типографика ---------- */
 h1,h2,h3,h4{
-  font-family: "Unbounded", "Manrope", sans-serif;
+  font-family: "Nunito", "Nunito Sans", sans-serif;
   font-weight: 800;
-  line-height: 1.02;
-  letter-spacing: -.035em;
+  line-height: 1.06;
+  letter-spacing: -.02em;
   text-wrap: balance;
   margin: 0;
 }
@@ -164,7 +164,7 @@ body.hot .cur{ width:58px; height:58px; margin:-29px 0 0 -29px; border-color: va
   animation: heat 3.2s ease-in-out infinite;
 }
 @keyframes heat{ 50%{ box-shadow:0 0 22px 4px var(--acc); } }
-.mark b{ font-family:"Unbounded"; font-weight:800; font-size:16px; letter-spacing:-.02em; }
+.mark b{ font-family:"Nunito"; font-weight:800; font-size:16px; letter-spacing:-.02em; }
 .mark span{ font-family:"JetBrains Mono"; font-size:10px; letter-spacing:.18em; color: var(--acc); align-self:flex-start; margin-top:2px; }
 .nav-links{ display:flex; gap:24px; margin-left:auto; }
 .nav-links a{ color: var(--ink-2); text-decoration:none; font-size:14px; font-weight:500; position:relative; padding-block:4px; }
@@ -187,6 +187,17 @@ body.hot .cur{ width:58px; height:58px; margin:-29px 0 0 -29px; border-color: va
 .btn.ghost{ background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
 .btn.ghost:hover{ box-shadow: inset 0 0 0 1px var(--acc), 0 12px 34px -16px var(--acc); color:#fff; }
 .btn.sm{ padding: 9px 16px; font-size:11.5px; }
+
+/* магнит: притягивается сразу (0.13 с), отпускает неспешно (0.6 с, power3.out) */
+.mag{
+  transition-property: transform, box-shadow, background, color;
+  transition-duration: .13s, .3s, .35s, .2s;
+  transition-timing-function: cubic-bezier(.33,1,.68,1), var(--ease), var(--ease), linear;
+}
+.mag.releasing{
+  transition-duration: .6s, .3s, .35s, .2s;
+  transition-timing-function: cubic-bezier(.165,.84,.44,1), var(--ease), var(--ease), linear;
+}
 body.touch .btn, body.touch a, body.touch button{ cursor:pointer; }
 
 /* ---------- строка состояния принтера ---------- */
@@ -221,7 +232,7 @@ body.touch .btn, body.touch a, body.touch button{ cursor:pointer; }
 }
 .specs div{ background: var(--plate); padding: 14px 16px; }
 .specs .k{ font-family:"JetBrains Mono",monospace; font-size:10px; letter-spacing:.16em; color: var(--dim); text-transform:uppercase; }
-.specs .v{ font-family:"Unbounded"; font-weight:600; font-size: 16px; letter-spacing:-.03em; margin-top:5px; white-space:nowrap; }
+.specs .v{ font-family:"Nunito"; font-weight:600; font-size: 16px; letter-spacing:-.03em; margin-top:5px; white-space:nowrap; }
 
 /* ============================================================
    3D-КОРПУС НА СТОЛЕ ПРИНТЕРА — CSS 3D, реальная геометрия
@@ -427,7 +438,7 @@ body.touch .btn, body.touch a, body.touch button{ cursor:pointer; }
 .preset{ cursor:none; text-align:left; font:inherit; color:inherit; padding:20px; }
 body.touch .preset{ cursor:pointer; }
 .preset .pname{
-  font-family:"Unbounded"; font-weight:600; font-size:17px; letter-spacing:-.02em;
+  font-family:"Nunito"; font-weight:600; font-size:17px; letter-spacing:-.02em;
   display:flex; align-items:center; justify-content:space-between; gap:10px;
 }
 .preset .pmeta{ font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.14em; color:var(--dim); text-transform:uppercase; margin-top:7px; }
@@ -492,20 +503,20 @@ body.touch .sw{ cursor:pointer; }
 .totals{ display:grid; grid-template-columns: repeat(3,1fr); gap:1px; background:var(--line-soft); border-radius:var(--r-m); overflow:hidden; border:1px solid var(--line-soft); margin-top:16px; }
 .totals div{ background: var(--plate); padding:14px 16px; }
 .totals .k{ font-family:"JetBrains Mono",monospace; font-size:9.5px; letter-spacing:.16em; color:var(--dim); text-transform:uppercase; }
-.totals .v{ font-family:"Unbounded"; font-weight:600; font-size:19px; margin-top:4px; letter-spacing:-.02em; }
+.totals .v{ font-family:"Nunito"; font-weight:600; font-size:19px; margin-top:4px; letter-spacing:-.02em; }
 .sumbar{
   display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap;
   padding:18px; border-radius:var(--r-m);
   background: linear-gradient(100deg, color-mix(in srgb,var(--acc) 16%, var(--panel)), var(--panel));
   border:1px solid color-mix(in srgb,var(--acc) 35%, var(--line));
 }
-.sumbar .total{ font-family:"Unbounded"; font-weight:800; font-size: clamp(26px,3vw,34px); letter-spacing:-.03em; }
+.sumbar .total{ font-family:"Nunito"; font-weight:800; font-size: clamp(26px,3vw,34px); letter-spacing:-.03em; }
 .sumbar .note{ font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; }
 
 /* ---------- материалы ---------- */
 .mgrid{ display:grid; grid-template-columns: repeat(auto-fit,minmax(215px,1fr)); gap:16px; }
 @media (min-width:1120px){ .mgrid{ grid-template-columns: repeat(5,minmax(0,1fr)); } }
-.mcard .mtitle{ font-family:"Unbounded"; font-weight:600; font-size:20px; letter-spacing:-.02em; }
+.mcard .mtitle{ font-family:"Nunito"; font-weight:600; font-size:20px; letter-spacing:-.02em; }
 .mcard .mtemp{ font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.14em; color:var(--acc); text-transform:uppercase; margin-top:6px; }
 .mcard p{ color:var(--muted); font-size:14px; margin-top:12px; }
 .meters{ margin-top:18px; display:flex; flex-direction:column; gap:9px; }
@@ -529,7 +540,7 @@ body.touch .sw{ cursor:pointer; }
 .prod .glyph{ width:88px; height:112px; border-radius:8px; position:relative; transform: rotate(-7deg); transition: transform .5s var(--ease); }
 .prod:hover .glyph{ transform: rotate(0deg) scale(1.08); }
 .prod .body{ padding:20px; }
-.prod .nm{ font-family:"Unbounded"; font-weight:600; font-size:17px; letter-spacing:-.02em; }
+.prod .nm{ font-family:"Nunito"; font-weight:600; font-size:17px; letter-spacing:-.02em; }
 .prod .ds{ color:var(--muted); font-size:13.5px; margin-top:8px; min-height:42px; }
 .prod .prow{ display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:16px; gap:12px; }
 .prod .pr{ font-family:"JetBrains Mono",monospace; font-size:17px; font-weight:600; }
@@ -778,11 +789,11 @@ ul{ margin:0; padding:0; list-style:none; }
     <div class="card">
       <div class="panel-h" style="margin-bottom:18px"><span>Типографика</span><span>3 гарнитуры</span></div>
       <div class="type-sample first">
-        <div class="lb">Дисплей · Unbounded 800 · tracking −3.5%</div>
-        <div style="font-family:Unbounded;font-weight:800;font-size:30px;letter-spacing:-.035em;line-height:1.05">Печатаем корпус</div>
+        <div class="lb">Дисплей · Nunito 800 · tracking −2%</div>
+        <div style="font-family:Nunito;font-weight:800;font-size:30px;letter-spacing:-.035em;line-height:1.05">Печатаем корпус</div>
       </div>
       <div class="type-sample">
-        <div class="lb">Текст · Manrope 400/600 · 16/1.6</div>
+        <div class="lb">Текст · Nunito Sans 400/600 · 16/1.6</div>
         <div style="font-size:15px;color:var(--ink-2)">Основной текст интерфейса и карточек. Строка держится около 65 знаков, чтобы читалось без усилия.</div>
       </div>
       <div class="type-sample">
@@ -799,7 +810,7 @@ ul{ margin:0; padding:0; list-style:none; }
         <li>Корпус в CSS 3D: шесть граней, стекло с блюром, RGB-подсветка сквозь перфорацию, наклон за курсором.</li>
         <li>Стол принтера: перспективная сетка со свечением, окрашивается акцентом активной схемы.</li>
         <li>Головка печати: при смене цвета по корпусу снизу вверх пробегает световой слой.</li>
-        <li>Магнитные кнопки: притягиваются к курсору в радиусе 110 px.</li>
+        <li>Магнитные кнопки: зона притяжения шире кнопки на 44 px, тянется только ближайшая, притяжение мгновенное (0.13 с), возврат неспешный (0.6 с).</li>
         <li>Тилт-карточки: наклон по осям X/Y плюс блик, идущий за указателем.</li>
         <li>Появление секций: сдвиг снизу с задержкой по очереди — как выкладывается слой.</li>
         <li>Пресет меняет акцент всей страницы: свечение, кнопки, сетка стола, подсветка внутри корпуса.</li>
@@ -821,7 +832,7 @@ ul{ margin:0; padding:0; list-style:none; }
           <tr><td>Реакция на курсор</td><td><code>MouseRegion(onHover:)</code> → <code>ValueNotifier&lt;Offset&gt;</code> → <code>AnimatedBuilder</code>. Магнитные кнопки — <code>Transform.translate</code>.</td></tr>
           <tr><td>Тилт карточек</td><td><code>Matrix4..setEntry(3,2,0.0012)..rotateX()..rotateY()</code> в <code>Transform</code>.</td></tr>
           <tr><td>Появление при скролле</td><td><code>VisibilityDetector</code> + <code>flutter_animate</code>: <code>.fadeIn().slideY()</code>.</td></tr>
-          <tr><td>Шрифты</td><td><code>google_fonts</code>: Unbounded, Manrope, JetBrains Mono — все с кириллицей; для первой отрисовки кладём в <code>assets/fonts</code>.</td></tr>
+          <tr><td>Шрифты</td><td><code>google_fonts</code>: Nunito, Nunito Sans, JetBrains Mono — все с кириллицей; для первой отрисовки кладём в <code>assets/fonts</code>.</td></tr>
           <tr><td>Токены и пресеты</td><td><code>ThemeExtension&lt;ModColors&gt;</code> + <code>AnimatedTheme</code>: пресет — готовый инстанс расширения, переключение анимируется.</td></tr>
           <tr><td>Состояние конструктора и цена</td><td><code>Riverpod</code>: конфигурация — иммутабельная модель, цена/масса/время — чистые функции от неё, те же формулы переиспользует бэкенд.</td></tr>
           <tr><td>Рендер и SEO</td><td>CanvasKit ради эффектов, <code>go_router</code> + path-url-strategy, предрендер посадочных под шеринг.</td></tr>
@@ -847,7 +858,7 @@ ul{ margin:0; padding:0; list-style:none; }
 <div class="wrap">
   <div class="pfoot">
     <span>MODCASE Hyper · концепт визуального языка</span>
-    <span>Unbounded · Manrope · JetBrains Mono</span>
+    <span>Nunito · Nunito Sans · JetBrains Mono</span>
     <span id="fps">—</span>
   </div>
 </div>
@@ -1206,13 +1217,33 @@ function draw(now){
     }
   }
 
-  if (!TOUCH) for (const b of magnets){
-    const r = b.getBoundingClientRect();
-    if (r.bottom < 0 || r.top > innerHeight) continue;
-    const bx = r.left + r.width/2, by = r.top + r.height/2;
-    if (Math.hypot(M.x-bx, M.y-by) < 110){
-      b.style.transform = "translate("+((M.x-bx)*.28).toFixed(1)+"px,"+((M.y-by)*.32).toFixed(1)+"px)";
-    } else if (b.style.transform){ b.style.transform = ""; }
+  /* магнит: зона шире кнопки на ZONE, тянется только ближайшая,
+     ход ограничен CAP — иначе соседние кнопки съезжались бы в одну точку */
+  if (!TOUCH){
+    const ZONE = 44, CAP = 22, PULL = .42;
+    let near = null, best = ZONE;
+    for (const b of magnets){
+      const r = b.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > innerHeight) continue;
+      const dx = Math.max(r.left - M.x, 0, M.x - r.right);
+      const dy = Math.max(r.top - M.y, 0, M.y - r.bottom);
+      const d = Math.hypot(dx, dy);
+      if (d <= best){ best = d; near = b; }
+    }
+    for (const b of magnets){
+      if (b === near){
+        const r = b.getBoundingClientRect();
+        let ox = (M.x - (r.left + r.width/2)) * PULL;
+        let oy = (M.y - (r.top + r.height/2)) * PULL;
+        const len = Math.hypot(ox, oy);
+        if (len > CAP){ ox = ox/len*CAP; oy = oy/len*CAP; }
+        b.classList.remove("releasing");
+        b.style.transform = "translate("+ox.toFixed(1)+"px,"+oy.toFixed(1)+"px)";
+      } else if (b.style.transform){
+        b.classList.add("releasing");
+        b.style.transform = "";
+      }
+    }
   }
 
   if ((rvTick = (rvTick+1) % 8) === 0) checkReveal();

@@ -6,30 +6,61 @@ import 'package:flutter/scheduler.dart';
 
 import '../../theme/mod_colors.dart';
 
-/// Позиция курсора в глобальных координатах — её слушают фон, свечение
-/// и наклон корпуса.
+/// Состояние указателя на всю страницу: позиция курсора и признак того,
+/// что он над интерактивным элементом. Слушают фон, курсор-сопло,
+/// магнитные кнопки и наклон корпуса.
 class PointerScope extends InheritedWidget {
-  const PointerScope({required this.pointer, required super.child, super.key});
+  const PointerScope({
+    required this.pointer,
+    required this.hot,
+    required super.child,
+    super.key,
+  });
 
   final ValueListenable<Offset> pointer;
+  final ValueNotifier<bool> hot;
 
-  static ValueListenable<Offset> of(BuildContext context) {
+  static PointerScope _of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<PointerScope>();
     assert(scope != null, 'PointerScope не найден выше по дереву');
-    return scope!.pointer;
+    return scope!;
   }
+
+  static ValueListenable<Offset> of(BuildContext context) => _of(context).pointer;
+
+  static ValueNotifier<bool> hotOf(BuildContext context) => _of(context).hot;
 
   @override
   bool updateShouldNotify(PointerScope oldWidget) =>
-      oldWidget.pointer != pointer;
+      oldWidget.pointer != pointer || oldWidget.hot != hot;
 }
 
-/// Фон страницы: восходящий тепловой поток частиц, отталкивание от курсора
-/// и пятно свечения под ним. Аналог канвы из концепта.
+/// Курсор превращается в сопло: кольцо тянется с запаздыванием, горячее
+/// ядро идёт быстрее, а за движением остаётся экструзионный след, который
+/// остывает из расплава в цвет активной схемы. Над кнопками кольцо
+/// раскрывается и зеленеет.
+class HotZone extends StatelessWidget {
+  const HotZone({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final hot = PointerScope.hotOf(context);
+    return MouseRegion(
+      onEnter: (_) => hot.value = true,
+      onExit: (_) => hot.value = false,
+      child: child,
+    );
+  }
+}
+
+/// Фон страницы: восходящий тепловой поток частиц, отталкивание от курсора,
+/// пятно свечения под ним и сам курсор-сопло.
 ///
-/// В продакшене эту сцену стоит заменить фрагментным шейдером
+/// В продакшене сцену стоит перенести во фрагментный шейдер
 /// (`flutter_shaders`, юниформы `uTime` / `uMouse`) — рисунок тот же,
-/// но кадр стоит дешевле.
+/// но кадр дешевле.
 class PointerField extends StatefulWidget {
   const PointerField({required this.child, super.key});
 
@@ -42,6 +73,7 @@ class PointerField extends StatefulWidget {
 class _PointerFieldState extends State<PointerField>
     with SingleTickerProviderStateMixin {
   final _pointer = ValueNotifier<Offset>(Offset.zero);
+  final _hot = ValueNotifier<bool>(false);
   final _field = _Field();
   late final Ticker _ticker;
   Duration _last = Duration.zero;
@@ -55,13 +87,14 @@ class _PointerFieldState extends State<PointerField>
   void _tick(Duration elapsed) {
     final dt = (elapsed - _last).inMicroseconds / 16666.0;
     _last = elapsed;
-    _field.step(dt.clamp(0.0, 3.0), _pointer.value);
+    _field.step(dt.clamp(0.0, 3.0), _pointer.value, _hot.value);
   }
 
   @override
   void dispose() {
     _ticker.dispose();
     _pointer.dispose();
+    _hot.dispose();
     _field.dispose();
     super.dispose();
   }
@@ -74,10 +107,16 @@ class _PointerFieldState extends State<PointerField>
 
     return MouseRegion(
       opaque: false,
+      cursor: reduceMotion ? MouseCursor.defer : SystemMouseCursors.none,
       onHover: (event) => _pointer.value = event.position,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          _field.resize(constraints.biggest, [c.cold, c.mid, c.hot, c.silk]);
+          _field.resize(
+            constraints.biggest,
+            [c.cold, c.mid, c.hot, c.silk],
+            accent: c.accent,
+            silk: c.silk,
+          );
           return Stack(
             children: [
               Positioned.fill(child: ColoredBox(color: c.plate)),
@@ -101,15 +140,20 @@ class _PointerFieldState extends State<PointerField>
                   ),
                 ),
               ),
+              PointerScope(
+                pointer: _pointer,
+                hot: _hot,
+                child: widget.child,
+              ),
+              // Сопло и след рисуем поверх всего, но события пропускаем сквозь.
               Positioned.fill(
                 child: IgnorePointer(
                   child: CustomPaint(
-                    painter: _FieldPainter(_field, _pointer),
+                    painter: _FieldPainter(_field),
                     isComplex: true,
                   ),
                 ),
               ),
-              PointerScope(pointer: _pointer, child: widget.child),
             ],
           );
         },
@@ -130,44 +174,89 @@ class _Particle {
   int colorIndex = 0;
 }
 
+/// Капля расплава из сопла: живёт около секунды и остывает.
+class _Spark {
+  _Spark(this.position, this.velocity, this.radius);
+
+  Offset position;
+  Offset velocity;
+  double radius;
+  double life = 1;
+}
+
 class _Field extends ChangeNotifier {
   final _random = math.Random(7);
   final List<_Particle> particles = [];
+  final List<_Spark> sparks = [];
+
   List<Color> colors = const [];
+  Color accent = const Color(0xFFFF4A1C);
+  Color silk = const Color(0xFF16F2AE);
   Size size = Size.zero;
 
-  void resize(Size value, List<Color> palette) {
+  Offset pointer = Offset.zero;
+  Offset ring = Offset.zero;
+  Offset core = Offset.zero;
+  double spin = 0;
+  bool hot = false;
+  bool awake = false;
+
+  void resize(
+    Size value,
+    List<Color> palette, {
+    required Color accent,
+    required Color silk,
+  }) {
     colors = palette;
+    this.accent = accent;
+    this.silk = silk;
     if (value == size || value.isEmpty) return;
     size = value;
     final count = (value.width * value.height / 13000).round().clamp(40, 150);
     particles
       ..clear()
       ..addAll(List.generate(count, (i) {
-        final p = _Particle(
+        return _Particle(
           Offset(_random.nextDouble() * value.width,
               _random.nextDouble() * value.height),
           _random.nextDouble() * 0.32 + 0.07,
           _random.nextDouble() * 1.9 + 0.5,
           _random.nextDouble() * 0.5 + 0.2,
           _random.nextDouble() * math.pi * 2,
-        );
-        return p..colorIndex = i % 4;
+        )..colorIndex = i % 4;
       }));
   }
 
-  void step(double dt, Offset pointer) {
+  void step(double dt, Offset next, bool isHot) {
     if (particles.isEmpty) return;
+    hot = isHot;
+    spin += 0.02 * dt;
+
+    final moved = next - pointer;
+    if (next != Offset.zero) {
+      if (!awake) {
+        awake = true;
+        ring = next;
+        core = next;
+      }
+      if (moved.distance > 0.6) _emit(next, moved);
+      pointer = next;
+    }
+
+    // Кольцо отстаёт, ядро догоняет быстрее — как в концепте.
+    ring += (pointer - ring) * (0.18 * dt).clamp(0.0, 1.0);
+    core += (pointer - core) * (0.45 * dt).clamp(0.0, 1.0);
+
     for (final p in particles) {
-      var next = p.position.translate(
+      var position = p.position.translate(
         math.sin(p.phase) * 0.22 * dt,
         -p.speed * dt,
       );
       p.phase += 0.012 * dt;
-      if (next.dy < -12) {
-        next = Offset(_random.nextDouble() * size.width, size.height + 12);
+      if (position.dy < -12) {
+        position = Offset(_random.nextDouble() * size.width, size.height + 12);
       }
-      p.position = next;
+      p.position = position;
 
       final delta = p.position - pointer;
       final distanceSq = delta.distanceSquared;
@@ -177,20 +266,46 @@ class _Field extends ChangeNotifier {
       }
       p.push *= 0.9;
     }
+
+    for (var i = sparks.length - 1; i >= 0; i--) {
+      final spark = sparks[i];
+      spark.position += spark.velocity * dt;
+      spark.velocity = spark.velocity.translate(0, 0.012 * dt);
+      spark.life -= 0.022 * dt;
+      if (spark.life <= 0) sparks.removeAt(i);
+    }
+
     notifyListeners();
+  }
+
+  void _emit(Offset at, Offset moved) {
+    final speed = math.min(moved.distance, 40.0);
+    final count = speed > 6 ? 2 : 1;
+    for (var i = 0; i < count; i++) {
+      sparks.add(_Spark(
+        at.translate((_random.nextDouble() - .5) * 6, (_random.nextDouble() - .5) * 6),
+        Offset(
+          -moved.dx * 0.035 + (_random.nextDouble() - .5) * .5,
+          -moved.dy * 0.035 + (_random.nextDouble() - .5) * .5 - .25,
+        ),
+        _random.nextDouble() * 2.4 + 1.2,
+      ));
+    }
+    if (sparks.length > 220) sparks.removeRange(0, sparks.length - 220);
   }
 }
 
 class _FieldPainter extends CustomPainter {
-  _FieldPainter(this.field, this.pointer)
-      : super(repaint: Listenable.merge([field, pointer]));
+  _FieldPainter(this.field) : super(repaint: field);
 
   final _Field field;
-  final ValueListenable<Offset> pointer;
+
+  static const _molten = Color(0xFFFFD9A8);
 
   @override
   void paint(Canvas canvas, Size size) {
     if (field.colors.isEmpty) return;
+
     final dot = Paint()..blendMode = BlendMode.plus;
     final link = Paint()
       ..blendMode = BlendMode.plus
@@ -206,16 +321,73 @@ class _FieldPainter extends CustomPainter {
         dot..color = color.withValues(alpha: p.alpha * 0.55),
       );
 
-      // связи только вокруг указателя — «магнитное поле» сопла
-      final distance = (at - pointer.value).distance;
-      if (distance < 160) {
+      // Связи только вокруг указателя — «магнитное поле» сопла.
+      final distance = (at - field.pointer).distance;
+      if (field.awake && distance < 160) {
         canvas.drawLine(
           at,
-          pointer.value,
+          field.pointer,
           link..color = color.withValues(alpha: (1 - distance / 160) * 0.3),
         );
       }
     }
+
+    // Экструзионный след: из расплава в акцент схемы.
+    for (final spark in field.sparks) {
+      canvas.drawCircle(
+        spark.position,
+        spark.radius * spark.life,
+        dot
+          ..color = Color.lerp(_molten, field.accent, 1 - spark.life)!
+              .withValues(alpha: spark.life * 0.8),
+      );
+    }
+
+    if (!field.awake) return;
+    _paintNozzle(canvas);
+  }
+
+  /// Сопло: кольцо с пунктирной обоймой и горячее ядро.
+  void _paintNozzle(Canvas canvas) {
+    final radius = field.hot ? 29.0 : 17.0;
+    final tint = field.hot ? field.silk : field.accent;
+
+    canvas.drawCircle(
+      field.ring,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..blendMode = BlendMode.plus
+        ..color = Color.lerp(tint, Colors.white, 0.2)!,
+    );
+
+    final dashes = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..blendMode = BlendMode.plus
+      ..color = tint.withValues(alpha: 0.4);
+    final ring = Rect.fromCircle(center: field.ring, radius: radius + 9);
+    for (var i = 0; i < 12; i++) {
+      final start = field.spin + i * math.pi / 6;
+      canvas.drawArc(ring, start, 0.18, false, dashes);
+    }
+
+    canvas.drawCircle(
+      field.core,
+      3,
+      Paint()
+        ..blendMode = BlendMode.plus
+        ..color = _molten
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+    );
+    canvas.drawCircle(
+      field.core,
+      2.5,
+      Paint()
+        ..blendMode = BlendMode.plus
+        ..color = const Color(0xFFFFE9CF),
+    );
   }
 
   @override

@@ -8,7 +8,7 @@
 
 ## Стек
 
-Flutter Web (CanvasKit), Riverpod для состояния конструктора, Google Fonts.
+Flutter Web (CanvasKit), Riverpod для состояния конструктора, Google Fonts (Nunito, Nunito Sans, JetBrains Mono).
 
 ## Структура
 
