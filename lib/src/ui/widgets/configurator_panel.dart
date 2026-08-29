@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/case_part.dart';
+import '../../domain/configuration.dart';
 import '../../domain/filament.dart';
 import '../../domain/filament_color.dart';
 import '../../state/config_controller.dart';
@@ -47,8 +48,8 @@ class ConfiguratorPanel extends ConsumerWidget {
         ),
         const SizedBox(height: 14),
         _Panel(
-          title: 'Материал · ${filament.label}',
-          trailing: filament.tempLabel,
+          title: 'Материал · ${filament.title}',
+          trailing: filament.label,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -58,7 +59,7 @@ class ConfiguratorPanel extends ConsumerWidget {
                 children: [
                   for (final id in FilamentId.values)
                     _Chip(
-                      label: filamentOf(id).label,
+                      label: filamentOf(id).title,
                       selected: id == filament.id,
                       onTap: () => ref
                           .read(configProvider.notifier)
@@ -91,6 +92,8 @@ class ConfiguratorPanel extends ConsumerWidget {
             ],
           ),
         ),
+        const SizedBox(height: 14),
+        _Details(config: config, quote: quote),
         const SizedBox(height: 14),
         Container(
           padding: const EdgeInsets.all(18),
@@ -170,11 +173,13 @@ class _Panel extends StatelessWidget {
     required this.title,
     required this.trailing,
     required this.child,
+    this.onTap,
   });
 
   final String title;
   final String trailing;
   final Widget child;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -189,18 +194,29 @@ class _Panel extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(title.toUpperCase(), style: text.labelSmall),
-              ),
-              Text(trailing.toUpperCase(), style: text.labelSmall),
-            ],
-          ),
-          const SizedBox(height: 14),
-          child,
-        ],
+        children: [_header(context, text), const SizedBox(height: 14), child],
+      ),
+    );
+  }
+}
+
+extension on _Panel {
+  Widget _header(BuildContext context, TextTheme text) {
+    final row = Row(
+      children: [
+        Expanded(child: Text(title.toUpperCase(), style: text.labelSmall)),
+        Text(trailing.toUpperCase(), style: text.labelSmall),
+      ],
+    );
+    if (onTap == null) return row;
+    return HotZone(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          mouseCursor: MouseCursor.defer,
+          child: row,
+        ),
       ),
     );
   }
@@ -408,6 +424,64 @@ class _Swatch extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Технические подробности спрятаны, но не выброшены: пресеты можно
+/// скачать и напечатать самому, и тогда все эти цифры нужны.
+class _Details extends StatefulWidget {
+  const _Details({required this.config, required this.quote});
+
+  final CaseConfiguration config;
+  final Quote quote;
+
+  @override
+  State<_Details> createState() => _DetailsState();
+}
+
+class _DetailsState extends State<_Details> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.mod;
+    final text = Theme.of(context).textTheme;
+
+    Widget row(String label, String value) => Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Row(
+        children: [
+          Expanded(child: Text(label.toUpperCase(), style: text.labelSmall)),
+          Text(value, style: text.labelLarge?.copyWith(color: c.inkSoft)),
+        ],
+      ),
+    );
+
+    return _Panel(
+      title: 'Характеристики',
+      trailing: _open ? 'свернуть' : 'для тех, кто печатает сам',
+      onTap: () => setState(() => _open = !_open),
+      child: AnimatedCrossFade(
+        duration: const Duration(milliseconds: 220),
+        crossFadeState: _open
+            ? CrossFadeState.showSecond
+            : CrossFadeState.showFirst,
+        firstChild: const SizedBox(width: double.infinity),
+        secondChild: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            row('пластика в наборе', grams(widget.quote.grams)),
+            row('время печати', hoursMinutes(widget.quote.hours)),
+            for (final part in kParts)
+              row(
+                part.name,
+                '${widget.config.filamentOf(part.id).label} · '
+                '${widget.config.filamentOf(part.id).tempLabel}',
+              ),
+          ],
         ),
       ),
     );

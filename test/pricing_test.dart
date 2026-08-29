@@ -21,6 +21,22 @@ void main() {
       expect(rub(quote.total), '8 609 ₽');
     });
 
+    test('срок считается от часов печати, а не равен им', () {
+      final quote = quoteFor(ember);
+      // 79 часов печати — это не 79 часов ожидания: ферма печатает
+      // детали параллельно.
+      expect(quote.hours, greaterThan(78));
+      expect(quote.readyInDays, 4);
+
+      final quick = quoteFor(
+        CaseConfiguration(
+          colors: ember.colors,
+          filaments: {for (final part in kParts) part.id: FilamentId.pla},
+        ),
+      );
+      expect(quick.readyInDays, lessThanOrEqualTo(quote.readyInDays));
+    });
+
     test('смена материала детали меняет цену и время', () {
       final cheaper = ember.withFilament(PartId.front, FilamentId.pla);
       final before = quoteFor(ember);

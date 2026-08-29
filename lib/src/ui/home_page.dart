@@ -273,16 +273,16 @@ class _StatusStrip extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(right: 26),
                 child: Text(
-                  'ФЕРМА ПЕЧАТАЕТ',
+                  'ПРИНИМАЕМ ЗАКАЗЫ',
                   style: text.labelSmall?.copyWith(color: c.silk),
                 ),
               ),
-              cell('сопло', '245°C'),
-              cell('стол', '70°C'),
+              cell('сейчас печатается', '12 наборов'),
+              cell('отгрузка', 'от 3 дней'),
               if (wide) ...[
-                cell('слой', '0.20 мм'),
-                cell('заполнение', '25% gyroid'),
-                cell('отгрузка', '3–5 дней'),
+                cell('доставка', 'по России'),
+                cell('сборка', 'отвёрткой, без клея'),
+                cell('гарантия', '1 год'),
               ],
             ],
           ),
@@ -530,9 +530,9 @@ class _BuilderSection extends ConsumerWidget {
         const SizedBox(height: 16),
         _Totals(
           cells: [
-            ('Масса пластика', grams(quote.grams)),
-            ('Время печати', hoursMinutes(quote.hours)),
-            ('Пластик', rub(quote.plastic)),
+            ('Готов через', '${quote.readyInDays} дня'),
+            ('Вес корпуса', grams(quote.grams)),
+            ('Материалы', rub(quote.plastic)),
           ],
         ),
       ],

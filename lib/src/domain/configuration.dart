@@ -102,6 +102,12 @@ class Quote {
   final double assembly;
 
   double get total => plastic + labor + assembly;
+
+  /// Через сколько дней набор уедет к покупателю. Часы печати сами по себе
+  /// пугают («78 часов!»), хотя на ферме детали печатаются параллельно:
+  /// трое суток на очередь, сборку и упаковку плюс сутки на каждые
+  /// сорок часов печати.
+  int get readyInDays => 3 + (hours / 40).floor();
 }
 
 Quote quoteFor(CaseConfiguration config) {

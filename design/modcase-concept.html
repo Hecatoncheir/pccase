@@ -519,6 +519,7 @@ body.touch .sw{ cursor:pointer; }
 .mcard .mtitle{ font-family:"Nunito"; font-weight:600; font-size:20px; letter-spacing:-.02em; }
 .mcard .mtemp{ font-family:"JetBrains Mono",monospace; font-size:10.5px; letter-spacing:.14em; color:var(--acc); text-transform:uppercase; margin-top:6px; }
 .mcard p{ color:var(--muted); font-size:14px; margin-top:12px; }
+.mcard .mnote{ font-family:"JetBrains Mono",monospace; font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); margin-top:14px; }
 .meters{ margin-top:18px; display:flex; flex-direction:column; gap:9px; }
 .meter{ display:grid; grid-template-columns: 1fr auto; align-items:center; gap:5px 10px; font-family:"JetBrains Mono",monospace; font-size:10px; letter-spacing:.1em; color:var(--dim); text-transform:uppercase; }
 .meter .mv{ color:var(--ink-2); }
@@ -635,13 +636,12 @@ ul{ margin:0; padding:0; list-style:none; }
 
 <div class="status">
   <div class="status-in">
-    <span class="live"><i class="dotpulse"></i>ферма печатает</span>
-    <span>сопло <b id="stNozzle">245°C</b></span>
-    <span>стол <b>70°C</b></span>
-    <span>слой <b>0.20 мм</b></span>
-    <span>заполнение <b>25% gyroid</b></span>
-    <span>в очереди <b id="stQueue">12</b> заказов</span>
-    <span>отгрузка <b>3–5 дней</b></span>
+    <span class="live"><i class="dotpulse"></i>принимаем заказы</span>
+    <span>сейчас печатается <b id="stQueue">12</b> наборов</span>
+    <span>отгрузка <b id="stNozzle">от 3 дней</b></span>
+    <span>доставка <b>по России</b></span>
+    <span>сборка <b>отвёрткой, без клея</b></span>
+    <span>гарантия <b>1 год</b></span>
   </div>
 </div>
 
@@ -693,9 +693,9 @@ ul{ margin:0; padding:0; list-style:none; }
     <div class="cfg-view">
       <div class="stage compact" id="stageCfg" aria-label="Предпросмотр конфигурации в 3D"></div>
       <div class="totals rv">
-        <div><div class="k">Масса пластика</div><div class="v mono" id="tMass">616 г</div></div>
-        <div><div class="k">Время печати</div><div class="v mono" id="tTime">68 ч</div></div>
-        <div><div class="k">Пластик</div><div class="v mono" id="tPlastic">1 720 ₽</div></div>
+        <div><div class="k">Готов через</div><div class="v mono" id="tTime">4 дня</div></div>
+        <div><div class="k">Вес корпуса</div><div class="v mono" id="tMass">616 г</div></div>
+        <div><div class="k">Материалы</div><div class="v mono" id="tPlastic">1 720 ₽</div></div>
       </div>
     </div>
 
@@ -706,7 +706,7 @@ ul{ margin:0; padding:0; list-style:none; }
       </div>
 
       <div class="panel">
-        <div class="panel-h"><span>Материал · <b id="mSel">PLA</b></span><span id="mTemp">195–225°C</span></div>
+        <div class="panel-h"><span>Материал · <b id="mSel">Стандарт</b></span><span id="mTemp">PLA</span></div>
         <div class="mats" id="matRow"></div>
         <p class="mono" id="mNote" style="font-size:11.5px;color:var(--muted);margin-top:14px;line-height:1.7"></p>
       </div>
@@ -887,11 +887,11 @@ const PARTS = [
 ];
 
 const MATS = {
-  "PLA":    {temp:"195–225°C", price:2.4, t:0.105, note:"Базовый пластик: максимум цветов и идеальная геометрия. Не любит прямое солнце и жару в закрытой машине.", m:[["жёсткость",62],["термостойкость",24],["внешний вид",78],["цена",18]]},
-  "PETG":   {temp:"230–250°C", price:3.2, t:0.118, note:"Вязкий и живучий: держит удар и нагрев, прощает перетянутый винт. Мелкая деталь чуть мягче, чем у PLA.", m:[["жёсткость",70],["термостойкость",58],["внешний вид",58],["цена",34]]},
-  "ASA":    {temp:"250–270°C", price:4.4, t:0.126, note:"Для солнца и жары: не желтеет и не ведёт со временем. Печатается в закрытой камере — отсюда цена и срок.", m:[["жёсткость",76],["термостойкость",88],["внешний вид",64],["цена",58]]},
-  "SILK":   {temp:"205–230°C", price:3.6, t:0.112, note:"Глянец под металл: панель читается как крашеный алюминий. Царапается легче матовых пластиков.", m:[["жёсткость",58],["термостойкость",24],["внешний вид",100],["цена",44]]},
-  "PLA-CF": {temp:"220–240°C", price:7.1, t:0.132, note:"Матовый угольный: самый жёсткий в наборе, полностью прячет слои. Идеален для сетки и несущих панелей.", m:[["жёсткость",100],["термостойкость",44],["внешний вид",92],["цена",96]]}
+  "PLA":    {title:"Стандарт", temp:"195–225°C", price:2.4, t:0.105, note:"Базовый пластик: максимум цветов и идеальная геометрия. Не любит прямое солнце и жару в закрытой машине.", m:[["жёсткость",62],["термостойкость",24],["внешний вид",78],["цена",18]]},
+  "PETG":   {title:"Прочный", temp:"230–250°C", price:3.2, t:0.118, note:"Вязкий и живучий: держит удар и нагрев, прощает перетянутый винт. Мелкая деталь чуть мягче, чем у PLA.", m:[["жёсткость",70],["термостойкость",58],["внешний вид",58],["цена",34]]},
+  "ASA":    {title:"Уличный", temp:"250–270°C", price:4.4, t:0.126, note:"Для солнца и жары: не желтеет и не ведёт со временем. Печатается в закрытой камере — отсюда цена и срок.", m:[["жёсткость",76],["термостойкость",88],["внешний вид",64],["цена",58]]},
+  "SILK":   {title:"Глянец", temp:"205–230°C", price:3.6, t:0.112, note:"Глянец под металл: панель читается как крашеный алюминий. Царапается легче матовых пластиков.", m:[["жёсткость",58],["термостойкость",24],["внешний вид",100],["цена",44]]},
+  "PLA-CF": {title:"Угольный", temp:"220–240°C", price:7.1, t:0.132, note:"Матовый угольный: самый жёсткий в наборе, полностью прячет слои. Идеален для сетки и несущих панелей.", m:[["жёсткость",100],["термостойкость",44],["внешний вид",92],["цена",96]]}
 };
 const MAT_KEYS = Object.keys(MATS);
 
@@ -949,6 +949,10 @@ const TOKENS = [
 const state = { preset:"ember", part:"front", c:Object.assign({},PRESETS[0].c), m:Object.assign({},PRESETS[0].m) };
 const ASSEMBLY = 1490, HOURLY = 45;
 
+/* Часы печати сами по себе пугают: на ферме детали печатаются параллельно,
+   поэтому покупателю показываем срок, а не станко-часы. */
+const days = hours => 3 + Math.floor(hours / 40);
+
 /* ================= 3D-корпус ================= */
 function caseHTML(){
   return '<div class="rig">'
@@ -991,7 +995,7 @@ function renderPresets(){
     const time = PARTS.reduce((a,x)=>a + x.g*MATS[p.m[x.id]].t, 0);
     return '<button class="card preset tilt" data-preset="'+p.id+'" aria-pressed="'+(p.id===state.preset)+'">'
       + '<div class="pname">'+p.name+'</div>'
-      + '<div class="pmeta">'+p.tag+' · '+mass+' г</div>'
+      + '<div class="pmeta">'+p.tag+' · готов за '+days(time)+' дня</div>'
       + '<div class="chips"><i style="background:'+p.c.front+'"></i><i style="background:'+p.c.side+'"></i>'
       + '<i style="background:'+p.c.feet+'"></i><i style="background:'+p.c.comb+'"></i></div>'
       + '<div class="price mono">'+rub(cost + time*HOURLY + ASSEMBLY)+'</div></button>';
@@ -1002,7 +1006,7 @@ function renderParts(){
     const mt = MATS[state.m[p.id]];
     return '<button class="part" role="option" data-part="'+p.id+'" aria-selected="'+(p.id===state.part)+'">'
       + '<span class="swatch" style="background:'+state.c[p.id]+'"></span>'
-      + '<span><span class="nm">'+p.name+'</span><span class="sub">'+state.m[p.id]+' · '+cname(state.c[p.id])+' · '+p.g+' г</span></span>'
+      + '<span><span class="nm">'+p.name+'</span><span class="sub">'+MATS[state.m[p.id]].title+' · '+cname(state.c[p.id])+'</span></span>'
       + '<span class="g">'+rub(p.g*mt.price)+'</span></button>';
   }).join("");
 }
@@ -1026,7 +1030,7 @@ function renderTotals(){
   const plastic = PARTS.reduce((a,p)=>a + p.g*MATS[state.m[p.id]].price, 0);
   const hours = PARTS.reduce((a,p)=>a + p.g*MATS[state.m[p.id]].t, 0);
   $("#tMass").textContent = mass + " г";
-  $("#tTime").textContent = Math.floor(hours) + " ч " + Math.round((hours%1)*60) + " мин";
+  $("#tTime").textContent = days(hours) + " дня";
   $("#tPlastic").textContent = rub(plastic);
   $("#tTotal").textContent = rub(plastic + hours*HOURLY + ASSEMBLY);
   $("#cfgHint").textContent = new Set(Object.values(state.m)).size + " материала в наборе";
@@ -1035,10 +1039,11 @@ function renderMaterials(){
   $("#matGrid").innerHTML = MAT_KEYS.map(k=>{
     const m = MATS[k];
     return '<div class="card mcard tilt rv">'
-      + '<div class="mtitle">'+k+'</div><div class="mtemp">сопло '+m.temp+' · '+m.price.toFixed(1)+' ₽/г</div>'
+      + '<div class="mtitle">'+m.title+'</div><div class="mtemp">'+k+' · '+m.price.toFixed(1)+' ₽ за грамм</div>'
       + '<p>'+m.note+'</p><div class="meters">'
       + m.m.map(x=>'<div class="meter"><span>'+x[0]+'</span><span class="mv">'+x[1]+'</span><span class="bar"><i style="--w:'+x[1]+'%"></i></span></div>').join("")
-      + '</div></div>';
+      + '</div>'
+      + '<div class="mnote">печатается при '+m.temp+'</div></div>';
   }).join("");
 }
 function renderShop(){

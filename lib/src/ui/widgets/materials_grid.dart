@@ -47,12 +47,12 @@ class _MaterialCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            filament.label,
+            filament.title,
             style: text.headlineMedium?.copyWith(fontSize: 20),
           ),
           const SizedBox(height: 6),
           Text(
-            'сопло ${filament.tempLabel} · ${filament.pricePerGram.toStringAsFixed(1)} ₽/г'
+            '${filament.label} · ${filament.pricePerGram.toStringAsFixed(1)} ₽ за грамм'
                 .toUpperCase(),
             style: text.labelSmall?.copyWith(color: c.accent),
           ),
@@ -60,6 +60,12 @@ class _MaterialCard extends StatelessWidget {
           Text(filament.note, style: text.bodySmall),
           const SizedBox(height: 18),
           for (final meter in filament.meters) _Meter(meter: meter),
+          const SizedBox(height: 4),
+          // Для тех, кто скачает пресет и напечатает сам.
+          Text(
+            'печатается при ${filament.tempLabel}'.toUpperCase(),
+            style: text.labelSmall,
+          ),
         ],
       ),
     );

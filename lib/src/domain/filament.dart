@@ -13,6 +13,7 @@ class FilamentMeter {
 class Filament {
   const Filament({
     required this.id,
+    required this.title,
     required this.label,
     required this.tempLabel,
     required this.pricePerGram,
@@ -22,7 +23,15 @@ class Filament {
   });
 
   final FilamentId id;
+
+  /// Как материал называют покупателю: он не обязан знать, чем PETG
+  /// отличается от ASA, ему важно, что одно прочное, а другое не выгорает.
+  final String title;
+
+  /// Код для тех, кто печатает сам, и для производства.
   final String label;
+
+  /// Температура сопла — нужна только при самостоятельной печати.
   final String tempLabel;
   final double pricePerGram;
   final double hoursPerGram;
@@ -33,6 +42,7 @@ class Filament {
 const kFilaments = <FilamentId, Filament>{
   FilamentId.pla: Filament(
     id: FilamentId.pla,
+    title: 'Стандарт',
     label: 'PLA',
     tempLabel: '195–225°C',
     pricePerGram: 2.4,
@@ -49,6 +59,7 @@ const kFilaments = <FilamentId, Filament>{
   ),
   FilamentId.petg: Filament(
     id: FilamentId.petg,
+    title: 'Прочный',
     label: 'PETG',
     tempLabel: '230–250°C',
     pricePerGram: 3.2,
@@ -65,6 +76,7 @@ const kFilaments = <FilamentId, Filament>{
   ),
   FilamentId.asa: Filament(
     id: FilamentId.asa,
+    title: 'Уличный',
     label: 'ASA',
     tempLabel: '250–270°C',
     pricePerGram: 4.4,
@@ -81,6 +93,7 @@ const kFilaments = <FilamentId, Filament>{
   ),
   FilamentId.silk: Filament(
     id: FilamentId.silk,
+    title: 'Глянец',
     label: 'SILK',
     tempLabel: '205–230°C',
     pricePerGram: 3.6,
@@ -97,6 +110,7 @@ const kFilaments = <FilamentId, Filament>{
   ),
   FilamentId.plaCf: Filament(
     id: FilamentId.plaCf,
+    title: 'Угольный',
     label: 'PLA-CF',
     tempLabel: '220–240°C',
     pricePerGram: 7.1,

@@ -49,6 +49,29 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('интерфейс говорит с покупателем, а не со слайсером', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    // Строка состояния показывает то, что важно покупателю.
+    expect(find.text('ПРИНИМАЕМ ЗАКАЗЫ'), findsOneWidget);
+    expect(find.text('ГОТОВ ЧЕРЕЗ'), findsOneWidget);
+
+    // Материалы названы по-человечески, коды ушли на второй план.
+    expect(find.textContaining('УГОЛЬНЫЙ'), findsWidgets);
+    expect(find.text('Угольный'), findsWidgets);
+
+    // Словаря слайсера на видном месте больше нет.
+    expect(find.textContaining('СОПЛО'), findsNothing);
+    expect(find.textContaining('ЗАПОЛНЕНИЕ'), findsNothing);
+    expect(find.textContaining('МАССА ПЛАСТИКА'), findsNothing);
+
+    // Но для тех, кто печатает сам, подробности никуда не делись.
+    expect(find.text('ХАРАКТЕРИСТИКИ'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('выбор темы восстанавливается из хранилища', (tester) async {
     final container = await pumpApp(tester, storage: {'theme': 'light'});
     expect(container.read(themeModeProvider), ThemeMode.light);
