@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/case_part.dart';
@@ -115,18 +116,46 @@ class ConfiguratorPanel extends ConsumerWidget {
                   Text(rub(quote.total), style: text.headlineMedium),
                 ],
               ),
-              ModButton(
-                label: 'В корзину',
-                compact: true,
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: c.panelRaised,
-                    content: Text(
-                      'Набор на ${rub(quote.total)} добавлен в корзину',
-                      style: text.bodyMedium,
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  ModButton(
+                    label: 'Ссылка на сборку',
+                    compact: true,
+                    style: ModButtonStyle.ghost,
+                    onPressed: () async {
+                      final link = ref
+                          .read(configProvider.notifier)
+                          .shareLink
+                          .toString();
+                      await Clipboard.setData(ClipboardData(text: link));
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: c.panelRaised,
+                          content: Text(
+                            'Ссылка на сборку скопирована',
+                            style: text.bodyMedium,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  ModButton(
+                    label: 'В корзину',
+                    compact: true,
+                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: c.panelRaised,
+                        content: Text(
+                          'Набор на ${rub(quote.total)} добавлен в корзину',
+                          style: text.bodyMedium,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
             ],
           ),

@@ -16,7 +16,9 @@ class PresetRail extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final active = ref.watch(presetProvider);
+    // Активна та схема, которой отвечает текущая сборка: тронул цвет
+    // руками — пресет перестаёт быть активным.
+    final activeId = ref.watch(configProvider).presetId;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -32,7 +34,7 @@ class PresetRail extends ConsumerWidget {
                 width: width,
                 child: _PresetCard(
                   preset: preset,
-                  selected: preset.id == active.id,
+                  selected: preset.id == activeId,
                   onTap: () => ref.read(presetProvider.notifier).select(preset),
                 ),
               ),

@@ -1,46 +1,115 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Корпус для ПК, который печатают на 3D-принтере под заказ: выбираете материал и цвет каждой панели, видите массу, время печати и цену до оплаты.">
 
-  <!-- iOS meta tags & icons -->
+  <!-- Цвет адресной строки идёт за темой приложения -->
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#060911">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#EEF1F8">
+
+  <meta property="og:title" content="MODCASE Hyper">
+  <meta property="og:description" content="Конструктор 3D-печатного корпуса: своя схема покраски, расчёт массы, времени печати и цены.">
+  <meta property="og:type" content="website">
+
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="pccase">
+  <meta name="apple-mobile-web-app-title" content="MODCASE">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>pccase</title>
+  <title>MODCASE Hyper — конструктор 3D-печатного корпуса</title>
   <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* Заглушка на время загрузки: кода и движка около трёх мегабайт,
+       и всё это время пользователь не должен смотреть в пустоту. */
+    html, body { margin: 0; height: 100%; background: #060911; }
+    @media (prefers-color-scheme: light) {
+      html, body { background: #EEF1F8; }
+    }
+
+    #boot {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      font-family: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+      transition: opacity .4s ease;
+    }
+    #boot.done { opacity: 0; pointer-events: none; }
+
+    #boot .mark {
+      display: flex;
+      align-items: baseline;
+      gap: 9px;
+      font-weight: 800;
+      font-size: 19px;
+      letter-spacing: -.02em;
+      color: #E9EEFC;
+    }
+    #boot .nozzle {
+      width: 15px;
+      height: 15px;
+      border-radius: 3px 3px 8px 8px;
+      background: linear-gradient(100deg, #2BB8FF, #FF2D8F 46%, #FF4A1C 84%);
+      align-self: center;
+    }
+    #boot .hyper {
+      font-size: 10px;
+      letter-spacing: .18em;
+      color: #FF4A1C;
+      font-family: ui-monospace, monospace;
+    }
+    #boot .bar {
+      width: 132px;
+      height: 2px;
+      border-radius: 2px;
+      background: #161E33;
+      overflow: hidden;
+    }
+    #boot .bar i {
+      display: block;
+      width: 40%;
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(100deg, #2BB8FF, #FF2D8F 46%, #FF4A1C 84%);
+      animation: run 1.4s ease-in-out infinite;
+    }
+    @keyframes run {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(330%); }
+    }
+    @media (prefers-color-scheme: light) {
+      #boot .mark { color: #0B1120; }
+      #boot .bar { background: #DFE5F1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #boot .bar i { animation: none; width: 100%; }
+    }
+  </style>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
+  <div id="boot">
+    <div class="mark"><span class="nozzle"></span>MODCASE<span class="hyper">HYPER</span></div>
+    <div class="bar"><i></i></div>
+  </div>
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+  <script>
+    // Убираем заглушку, как только приложение отрисовало первый кадр.
+    window.addEventListener('flutter-first-frame', function () {
+      var boot = document.getElementById('boot');
+      if (!boot) return;
+      boot.classList.add('done');
+      setTimeout(function () { boot.remove(); }, 450);
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

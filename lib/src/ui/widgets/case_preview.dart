@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/case_part.dart';
 import '../../state/config_controller.dart';
 import '../../theme/mod_colors.dart';
+import 'case_geometry.dart';
 import 'pointer_field.dart';
 
 /// Корпус в 3D. Вершины коробки поворачиваются и проецируются вручную,
@@ -113,9 +114,6 @@ class _CasePreviewState extends ConsumerState<CasePreview> {
   }
 }
 
-/// Точка после поворота: экранная позиция, глубина и масштаб перспективы.
-typedef _P = ({Offset at, double z, double scale});
-
 class _CasePainter extends CustomPainter {
   _CasePainter({
     required this.rx,
@@ -143,34 +141,17 @@ class _CasePainter extends CustomPainter {
   static const Color shell = Color(0xFF0B0F1A);
   static const Color shellSide = Color(0xFF141821);
 
-  /// Полугабариты корпуса: ширина 210, высота 330, глубина 215.
-  static const double w = 105;
-  static const double h = 165;
-  static const double d = 107.5;
-  static const double focal = 1500;
-  static const double floorY = 196;
+  static const double w = CaseGeometry.w;
+  static const double h = CaseGeometry.h;
+  static const double d = CaseGeometry.d;
+  static const double floorY = CaseGeometry.floorY;
 
-  late Offset _origin;
-  late double _fit;
+  late CaseGeometry _geometry;
 
-  // Углы на кадр одни и те же — считать синусы на каждую из полутысячи
-  // точек было чистой потерей.
-  late double _cosX;
-  late double _sinX;
-  late double _cosY;
-  late double _sinY;
+  ProjectedPoint _project(double x, double y, double z) =>
+      _geometry.project(x, y, z);
 
-  _P _project(double x, double y, double z) {
-    final x1 = x * _cosY + z * _sinY;
-    final z1 = -x * _sinY + z * _cosY;
-    final y2 = y * _cosX - z1 * _sinX;
-    final z2 = y * _sinX + z1 * _cosX;
-
-    final s = focal / (focal - z2) * _fit;
-    return (at: Offset(x1 * s, y2 * s) + _origin, z: z2, scale: s);
-  }
-
-  Path _quad(List<_P> points) {
+  Path _quad(List<ProjectedPoint> points) {
     final path = Path()..moveTo(points.first.at.dx, points.first.at.dy);
     for (final p in points.skip(1)) {
       path.lineTo(p.at.dx, p.at.dy);
@@ -180,98 +161,41 @@ class _CasePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    _cosX = math.cos(rx);
-    _sinX = math.sin(rx);
-    _cosY = math.cos(ry);
-    _sinY = math.sin(ry);
-    _fit = math.min(size.width / 460, size.height / 560).clamp(0.35, 1.15);
-    _origin = Offset(size.width / 2, size.height / 2 - 20 * _fit);
+    final fit = math.min(size.width / 460, size.height / 560).clamp(0.35, 1.15);
+    _geometry = CaseGeometry(
+      rx: rx,
+      ry: ry,
+      fit: fit,
+      origin: Offset(size.width / 2, size.height / 2 - 20 * fit),
+    );
 
     _paintPlate(canvas);
     _paintFloorGlow(canvas);
 
-    // Грани коробки: дальние рисуем первыми, ближние — поверх.
-    final faces =
-        <(String, List<_P>)>[
-          (
-            'back',
-            [
-              _project(-w, -h, -d),
-              _project(w, -h, -d),
-              _project(w, h, -d),
-              _project(-w, h, -d),
-            ],
-          ),
-          (
-            'left',
-            [
-              _project(-w, -h, -d),
-              _project(-w, -h, d),
-              _project(-w, h, d),
-              _project(-w, h, -d),
-            ],
-          ),
-          (
-            'bottom',
-            [
-              _project(-w, h, -d),
-              _project(w, h, -d),
-              _project(w, h, d),
-              _project(-w, h, d),
-            ],
-          ),
-          (
-            'top',
-            [
-              _project(-w, -h, -d),
-              _project(w, -h, -d),
-              _project(w, -h, d),
-              _project(-w, -h, d),
-            ],
-          ),
-          (
-            'right',
-            [
-              _project(w, -h, d),
-              _project(w, -h, -d),
-              _project(w, h, -d),
-              _project(w, h, d),
-            ],
-          ),
-          (
-            'front',
-            [
-              _project(-w, -h, d),
-              _project(w, -h, d),
-              _project(w, h, d),
-              _project(-w, h, d),
-            ],
-          ),
-        ]..sort((a, b) {
-          final za = a.$2.fold(0.0, (sum, p) => sum + p.z) / a.$2.length;
-          final zb = b.$2.fold(0.0, (sum, p) => sum + p.z) / b.$2.length;
-          return za.compareTo(zb);
-        });
+    // Дальние грани рисуем первыми, ближние — поверх.
+    final faces = _geometry.facesByDepth();
 
     var innerDone = false;
-    for (final (name, points) in faces) {
+    for (final face in faces) {
+      final points = face.points;
       // Внутренности — между дальними и ближними гранями,
       // чтобы их было видно сквозь стекло и перфорацию.
-      if (!innerDone && (name == 'front' || name == 'right')) {
+      if (!innerDone &&
+          (face.facet == CaseFacet.front || face.facet == CaseFacet.right)) {
         _paintInnards(canvas);
         innerDone = true;
       }
-      switch (name) {
-        case 'front':
+      switch (face.facet) {
+        case CaseFacet.front:
           _paintFront(canvas, points);
-        case 'right':
+        case CaseFacet.right:
           _paintGlass(canvas, points);
-        case 'top':
+        case CaseFacet.top:
           _paintTop(canvas, points);
         default:
           canvas.drawPath(
             _quad(points),
-            Paint()..color = name == 'left' ? shellSide : shell,
+            Paint()..color = face.facet == CaseFacet.left ? shellSide : shell,
           );
           canvas.drawPath(
             _quad(points),
@@ -375,7 +299,7 @@ class _CasePainter extends CustomPainter {
   }
 
   /// Фронтальная панель: заливка, свечение изнутри и перфорация.
-  void _paintFront(Canvas canvas, List<_P> points) {
+  void _paintFront(Canvas canvas, List<ProjectedPoint> points) {
     final color = colors[PartId.front]!;
     final path = _quad(points);
     canvas.drawPath(path, Paint()..color = color);
@@ -436,7 +360,7 @@ class _CasePainter extends CustomPainter {
   }
 
   /// Боковое окно: тонированное стекло с толстой рамкой.
-  void _paintGlass(Canvas canvas, List<_P> points) {
+  void _paintGlass(Canvas canvas, List<ProjectedPoint> points) {
     final tint = colors[PartId.side]!;
     final path = _quad(points);
     final bounds = path.getBounds();
@@ -459,7 +383,7 @@ class _CasePainter extends CustomPainter {
   }
 
   /// Верхняя крышка с вентиляционными прорезями.
-  void _paintTop(Canvas canvas, List<_P> points) {
+  void _paintTop(Canvas canvas, List<ProjectedPoint> points) {
     final color = colors[PartId.top]!;
     final path = _quad(points);
     canvas.drawPath(path, Paint()..color = color);

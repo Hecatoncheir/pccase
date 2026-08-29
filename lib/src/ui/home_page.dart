@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/config_controller.dart';
 import '../state/theme_controller.dart';
 import '../theme/mod_colors.dart';
+import 'breakpoints.dart';
 import 'format.dart';
 import 'widgets/case_preview.dart';
 import 'widgets/configurator_panel.dart';
@@ -14,9 +15,6 @@ import 'widgets/preset_rail.dart';
 import 'widgets/kit_grid.dart';
 import 'widgets/materials_grid.dart';
 import 'widgets/process_steps.dart';
-
-const double _maxWidth = 1280;
-const double _wideBreakpoint = 1040;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -83,10 +81,12 @@ class _Wrap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gutter = MediaQuery.sizeOf(context).width < 600 ? 18.0 : 52.0;
+    final gutter = MediaQuery.sizeOf(context).width < Breakpoints.tightGutter
+        ? 18.0
+        : 52.0;
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: _maxWidth),
+        constraints: const BoxConstraints(maxWidth: Breakpoints.content),
         child: Padding(
           padding:
               (padding ?? EdgeInsets.zero) +
@@ -108,7 +108,7 @@ class _NavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.mod;
     final text = Theme.of(context).textTheme;
-    final wide = MediaQuery.sizeOf(context).width >= _wideBreakpoint;
+    final wide = Breakpoints.isWide(context);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -235,7 +235,7 @@ class _StatusStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.mod;
     final text = Theme.of(context).textTheme;
-    final wide = MediaQuery.sizeOf(context).width >= 620;
+    final wide = MediaQuery.sizeOf(context).width >= Breakpoints.statusFull;
 
     Widget cell(String label, String value) => Padding(
       padding: const EdgeInsets.only(right: 26),
@@ -308,7 +308,7 @@ class _Hero extends StatelessWidget {
     final c = context.mod;
     final text = Theme.of(context).textTheme;
     final width = MediaQuery.sizeOf(context).width;
-    final wide = width >= _wideBreakpoint;
+    final wide = width >= Breakpoints.wide;
     final display = width < 700 ? text.displayMedium : text.displayLarge;
 
     final copy = Column(
@@ -463,7 +463,7 @@ class _SectionHead extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final wide = MediaQuery.sizeOf(context).width >= _wideBreakpoint;
+    final wide = Breakpoints.isWide(context);
     final heading = Text(title, style: text.headlineLarge);
     final leadText = lead == null
         ? const SizedBox.shrink()
@@ -527,7 +527,7 @@ class _BuilderSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final quote = ref.watch(quoteProvider);
-    final wide = MediaQuery.sizeOf(context).width >= _wideBreakpoint;
+    final wide = Breakpoints.isWide(context);
 
     final preview = Column(
       children: [
@@ -705,7 +705,7 @@ class _FinalSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.mod;
     final text = Theme.of(context).textTheme;
-    final display = MediaQuery.sizeOf(context).width < 700
+    final display = MediaQuery.sizeOf(context).width < Breakpoints.roomyType
         ? text.displayMedium
         : text.displayLarge;
 

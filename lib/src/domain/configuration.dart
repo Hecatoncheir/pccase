@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'case_part.dart';
 import 'filament.dart';
+import 'filament_color.dart';
 import 'preset.dart';
 
 /// Иммутабельная конфигурация набора. Цена, масса и время печати —
@@ -43,6 +44,41 @@ class CaseConfiguration {
   int get grams => kParts.fold(0, (sum, part) => sum + part.grams);
 
   int get materialCount => filaments.values.toSet().length;
+
+  /// Компактный код сборки для ссылки: на каждую деталь два символа —
+  /// цвет из палитры и материал. Шесть деталей укладываются в 12 знаков.
+  String toCode() {
+    final buffer = StringBuffer();
+    for (final part in kParts) {
+      final color = kFilamentColors.indexWhere(
+        (c) => c.color.toARGB32() == colors[part.id]!.toARGB32(),
+      );
+      final filament = FilamentId.values.indexOf(filaments[part.id]!);
+      if (color < 0) return '';
+      buffer
+        ..write(color.toRadixString(36))
+        ..write(filament.toRadixString(36));
+    }
+    return buffer.toString();
+  }
+
+  /// Разбирает код из ссылки. Возвращает `null` на любой мусор —
+  /// чужую ссылку править молча нельзя.
+  static CaseConfiguration? fromCode(String? code) {
+    if (code == null || code.length != kParts.length * 2) return null;
+
+    final colors = <PartId, Color>{};
+    final filaments = <PartId, FilamentId>{};
+    for (var i = 0; i < kParts.length; i++) {
+      final color = int.tryParse(code[i * 2], radix: 36);
+      final filament = int.tryParse(code[i * 2 + 1], radix: 36);
+      if (color == null || color >= kFilamentColors.length) return null;
+      if (filament == null || filament >= FilamentId.values.length) return null;
+      colors[kParts[i].id] = kFilamentColors[color].color;
+      filaments[kParts[i].id] = FilamentId.values[filament];
+    }
+    return CaseConfiguration(colors: colors, filaments: filaments);
+  }
 }
 
 /// Смета набора. Ставки демонстрационные — их место в настройках фермы.

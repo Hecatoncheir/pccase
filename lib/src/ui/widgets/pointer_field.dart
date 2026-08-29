@@ -6,19 +6,87 @@ import 'package:flutter/scheduler.dart';
 
 import '../../theme/mod_colors.dart';
 
-/// Состояние указателя на всю страницу: позиция курсора и признак того,
-/// что он над интерактивным элементом. Слушают фон, курсор-сопло,
-/// магнитные кнопки и наклон корпуса.
+/// Элемент, который умеет тянуться к курсору.
+abstract interface class MagnetTarget {
+  /// Насколько зона притяжения шире самого элемента.
+  double get magnetPadding;
+
+  /// Расстояние от курсора до элемента; внутри — ноль, вне дерева — null.
+  double? distanceTo(Offset pointer);
+
+  void engage({required bool engaged, required Offset pointer});
+}
+
+/// Разбор «кто ближе» общий на всё дерево, но живёт в [PointerScope],
+/// а не в глобальной переменной: так его видно в тестах и он умирает
+/// вместе с деревом.
+class MagnetRegistry {
+  final _states = <MagnetTarget>{};
+  Offset? _lastPointer;
+
+  void add(MagnetTarget state) => _states.add(state);
+
+  void remove(MagnetTarget state) {
+    _states.remove(state);
+    _lastPointer = null;
+  }
+
+  void update(Offset pointer) {
+    if (_lastPointer == pointer) return;
+    _lastPointer = pointer;
+
+    MagnetTarget? nearest;
+    var best = double.infinity;
+    for (final state in _states) {
+      final distance = state.distanceTo(pointer);
+      if (distance == null || distance > state.magnetPadding) continue;
+      if (distance < best) {
+        best = distance;
+        nearest = state;
+      }
+    }
+    for (final state in _states) {
+      state.engage(engaged: identical(state, nearest), pointer: pointer);
+    }
+  }
+}
+
+/// Курсор над интерактивным элементом. Считаем вложенность, а не держим
+/// флаг: карточка кита — это `HotZone` с кнопкой «В корзину» внутри, и уход
+/// с кнопки обратно на карточку гасил бы кольцо, хотя курсор никуда не делся.
+class HotCounter extends ValueNotifier<bool> {
+  HotCounter() : super(false);
+
+  int _depth = 0;
+
+  void enter() {
+    _depth++;
+    value = true;
+  }
+
+  void exit() {
+    if (_depth > 0) _depth--;
+    value = _depth > 0;
+  }
+}
+
+/// Состояние указателя на всю страницу: позиция курсора, признак того,
+/// что он над интерактивным элементом, и общий список магнитных зон.
+/// Слушают фон, курсор-сопло, магнитные кнопки и наклон корпуса.
 class PointerScope extends InheritedWidget {
   const PointerScope({
     required this.pointer,
     required this.hot,
+    required this.magnets,
     required super.child,
     super.key,
   });
 
   final ValueListenable<Offset> pointer;
-  final ValueNotifier<bool> hot;
+  final HotCounter hot;
+
+  /// Реестр магнитных зон: тянется только ближайшая к курсору.
+  final MagnetRegistry magnets;
 
   static PointerScope _of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<PointerScope>();
@@ -29,11 +97,15 @@ class PointerScope extends InheritedWidget {
   static ValueListenable<Offset> of(BuildContext context) =>
       _of(context).pointer;
 
-  static ValueNotifier<bool> hotOf(BuildContext context) => _of(context).hot;
+  static HotCounter hotOf(BuildContext context) => _of(context).hot;
+
+  static MagnetRegistry magnetsOf(BuildContext context) => _of(context).magnets;
 
   @override
   bool updateShouldNotify(PointerScope oldWidget) =>
-      oldWidget.pointer != pointer || oldWidget.hot != hot;
+      oldWidget.pointer != pointer ||
+      oldWidget.hot != hot ||
+      oldWidget.magnets != magnets;
 }
 
 /// Курсор превращается в сопло: кольцо тянется с запаздыванием, горячее
@@ -49,8 +121,8 @@ class HotZone extends StatelessWidget {
   Widget build(BuildContext context) {
     final hot = PointerScope.hotOf(context);
     return MouseRegion(
-      onEnter: (_) => hot.value = true,
-      onExit: (_) => hot.value = false,
+      onEnter: (_) => hot.enter(),
+      onExit: (_) => hot.exit(),
       child: child,
     );
   }
@@ -74,7 +146,8 @@ class PointerField extends StatefulWidget {
 class _PointerFieldState extends State<PointerField>
     with SingleTickerProviderStateMixin {
   final _pointer = ValueNotifier<Offset>(Offset.zero);
-  final _hot = ValueNotifier<bool>(false);
+  final _hot = HotCounter();
+  final _magnets = MagnetRegistry();
   final _field = _Field();
   late final Ticker _ticker;
   Duration _last = Duration.zero;
@@ -137,7 +210,12 @@ class _PointerFieldState extends State<PointerField>
                   ),
                 ),
               ),
-              PointerScope(pointer: _pointer, hot: _hot, child: widget.child),
+              PointerScope(
+                pointer: _pointer,
+                hot: _hot,
+                magnets: _magnets,
+                child: widget.child,
+              ),
               Positioned.fill(
                 child: RepaintBoundary(
                   child: IgnorePointer(

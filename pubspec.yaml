@@ -9,9 +9,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Убирает решётку из адреса, чтобы ссылка на сборку была обычной
+  flutter_web_plugins:
+    sdk: flutter
 
   # состояние конструктора
   flutter_riverpod: ^3.0.3
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:

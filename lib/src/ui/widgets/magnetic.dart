@@ -51,42 +51,9 @@ class Magnetic extends StatefulWidget {
   State<Magnetic> createState() => _MagneticState();
 }
 
-/// Курсор один, поэтому и разбор «кто ближе» общий на всё дерево.
-final _registry = _MagneticRegistry();
-
-class _MagneticRegistry {
-  final _states = <_MagneticState>{};
-  Offset? _lastPointer;
-
-  void add(_MagneticState state) => _states.add(state);
-
-  void remove(_MagneticState state) {
-    _states.remove(state);
-    _lastPointer = null;
-  }
-
-  void update(Offset pointer) {
-    if (_lastPointer == pointer) return;
-    _lastPointer = pointer;
-
-    _MagneticState? nearest;
-    var best = double.infinity;
-    for (final state in _states) {
-      final distance = state.distanceTo(pointer);
-      if (distance == null || distance > state.widget.padding) continue;
-      if (distance < best) {
-        best = distance;
-        nearest = state;
-      }
-    }
-    for (final state in _states) {
-      state.engage(engaged: identical(state, nearest), pointer: pointer);
-    }
-  }
-}
-
 class _MagneticState extends State<Magnetic>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin
+    implements MagnetTarget {
   // Притяжение — сразу, как только курсор рядом: короткий доводчик вместо
   // полусекундного слежения. Возврат остаётся неспешным, power3.out.
   static const _followCurve = Curves.easeOutCubic;
@@ -102,18 +69,20 @@ class _MagneticState extends State<Magnetic>
   Offset _target = Offset.zero;
 
   ValueListenable<Offset>? _pointer;
+  MagnetRegistry? _registry;
   bool _enabled = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _registry.add(this);
-  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _enabled = !MediaQuery.disableAnimationsOf(context);
+
+    final registry = PointerScope.magnetsOf(context);
+    if (!identical(registry, _registry)) {
+      _registry?.remove(this);
+      _registry = registry..add(this);
+    }
+
     final pointer = PointerScope.of(context);
     if (!identical(pointer, _pointer)) {
       _pointer?.removeListener(_onPointer);
@@ -124,17 +93,21 @@ class _MagneticState extends State<Magnetic>
   @override
   void dispose() {
     _pointer?.removeListener(_onPointer);
-    _registry.remove(this);
+    _registry?.remove(this);
     _controller.dispose();
     super.dispose();
   }
 
   void _onPointer() {
     if (!_enabled) return;
-    _registry.update(_pointer!.value);
+    _registry?.update(_pointer!.value);
   }
 
+  @override
+  double get magnetPadding => widget.padding;
+
   /// Расстояние от курсора до прямоугольника элемента; внутри — ноль.
+  @override
   double? distanceTo(Offset pointer) {
     final rect = _rect;
     if (rect == null) return null;
@@ -165,6 +138,7 @@ class _MagneticState extends State<Magnetic>
     return _rectCache = box.localToGlobal(Offset.zero) & box.size;
   }
 
+  @override
   void engage({required bool engaged, required Offset pointer}) {
     if (!_enabled) return;
     if (!engaged) {
