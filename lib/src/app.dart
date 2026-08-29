@@ -17,7 +17,7 @@ class ModCaseApp extends ConsumerWidget {
     final preset = ref.watch(presetProvider);
 
     return MaterialApp(
-      title: 'MODCASE Hyper',
+      title: 'ИСКРА',
       debugShowCheckedModeBanner: false,
       themeMode: ref.watch(themeModeProvider),
       theme: buildModTheme(preset, Brightness.light),

@@ -1,10 +1,14 @@
-# MODCASE Hyper
+# ИСКРА
+
+**Корпус под твою сборку.**
 
 Магазин и конструктор корпуса для ПК, который печатают на 3D-принтере под заказ.
 Покупатель собирает набор из шести печатных деталей: выбирает материал и цвет
 каждой панели или берёт готовый пресет, видит массу, время печати и цену до оплаты.
 
-Основа — модель [ModCase Hyper Premium Universal PC Case](https://makerworld.com/ru/models/2803591-modcase-hyper-premium-universal-pc-case).
+«Искра» — название магазина. Первая модель в каталоге —
+[ModCase Hyper Premium Universal PC Case](https://makerworld.com/ru/models/2803591-modcase-hyper-premium-universal-pc-case),
+она чужая, поэтому в брендинг не уходит и живёт как позиция каталога.
 
 ## Стек
 

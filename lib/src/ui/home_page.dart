@@ -138,12 +138,7 @@ class _NavBar extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            Text('MODCASE', style: text.titleLarge?.copyWith(fontSize: 16)),
-            const SizedBox(width: 6),
-            Text(
-              'HYPER',
-              style: text.labelSmall?.copyWith(color: c.accent, fontSize: 10),
-            ),
+            Text('ИСКРА', style: text.titleLarge?.copyWith(fontSize: 16)),
             const Spacer(),
             if (wide) ...[
               for (final label in sections)
@@ -314,7 +309,7 @@ class _Hero extends StatelessWidget {
     final copy = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _Eyebrow('ModCase Hyper · Universal PC Case · FDM'),
+        _Eyebrow('Искра · корпуса для ПК под заказ'),
         const SizedBox(height: 20),
         Text('Корпус, который', style: display),
         GradientText('печатают', gradient: c.ramp, style: display),
@@ -715,8 +710,8 @@ class _FinalSection extends StatelessWidget {
         children: [
           const _Eyebrow('Готово к сборке'),
           const SizedBox(height: 20),
-          Text('Печатаем', style: display, textAlign: TextAlign.center),
-          GradientText('твой корпус', gradient: c.ramp, style: display),
+          Text('Зажги', style: display, textAlign: TextAlign.center),
+          GradientText('свою сборку', gradient: c.ramp, style: display),
           const SizedBox(height: 24),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
@@ -766,7 +761,7 @@ class _Footer extends StatelessWidget {
             spacing: 24,
             runSpacing: 12,
             children: [
-              Text('MODCASE HYPER · КАРКАС ПРИЛОЖЕНИЯ', style: text.labelSmall),
+              Text('ИСКРА · КОРПУС ПОД ТВОЮ СБОРКУ', style: text.labelSmall),
               Text(
                 'NUNITO · NUNITO SANS · JETBRAINS MONO',
                 style: text.labelSmall,
